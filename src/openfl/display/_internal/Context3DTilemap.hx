@@ -62,14 +62,6 @@ class Context3DTilemap
 		vertexBufferData = (tilemap.__buffer != null) ? tilemap.__buffer.vertexBufferData : null;
 		vertexDataPosition = 0;
 
-		// TODO 存在异常的瓦片渲染问题
-		// if (vertexBufferData != null && vertexBufferData.length > 0 && !tilemap.__renderDirty && !tilemap.__group.__dirty && !tilemap.__worldAlphaChanged)
-		// {
-		// 	// Use Old vertexBufferData.
-		// 	numTiles = 1;
-		// 	return;
-		// }
-
 		var rect = Rectangle.__pool.get();
 		var matrix = Matrix.__pool.get();
 		var parentTransform = Matrix.__pool.get();
@@ -408,16 +400,7 @@ class Context3DTilemap
 
 		context = renderer.__context3D;
 
-		var isLock = false;
-
-		if (!tilemap._lock || (tilemap._lock && !tilemap._readFlush))
-		{
-			buildBuffer(tilemap, renderer);
-		}
-		else
-		{
-			isLock = true;
-		}
+		buildBuffer(tilemap, renderer);
 
 		if (numTiles == 0) return;
 
@@ -446,8 +429,6 @@ class Context3DTilemap
 		renderTileContainer(tilemap, renderer, tilemap.__group, cast tilemap.__worldShader, tilemap.__tileset, tilemap.__worldAlpha,
 			tilemap.tileBlendModeEnabled, currentBlendMode, null);
 		flush(tilemap, renderer, currentBlendMode);
-
-		tilemap._readFlush = true;
 
 		// renderer.filterManager.popObject (tilemap);
 		renderer.__popMaskRect();

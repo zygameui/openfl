@@ -1,6 +1,5 @@
 package openfl.net;
 
-import haxe.Exception;
 #if !flash
 import haxe.io.Bytes;
 import openfl.events.Event;
@@ -345,15 +344,6 @@ class URLLoader extends EventDispatcher
 
 		event.responseHeaders = headers;
 		dispatchEvent(event);
-	}
-
-	override public function dispatchEvent(event:Event):Bool {
-		try {
-			return super.dispatchEvent(event);
-		}catch(e:Exception){
-			@:privateAccess Lib.current.stage.__handleError(e);
-		}
-		return false;
 	}
 
 	@:noCompletion private function __prepareRequest(httpRequest:#if (!lime || display || macro || doc_gen) Dynamic #else _IHTTPRequest #end,

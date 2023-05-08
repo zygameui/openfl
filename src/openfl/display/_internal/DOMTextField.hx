@@ -1,7 +1,5 @@
 package openfl.display._internal;
 
-import haxe.Timer;
-import openfl.events.Event;
 import openfl.text._internal.HTMLParser;
 import openfl.text._internal.TextEngine;
 import openfl.display.DOMRenderer;
@@ -93,76 +91,27 @@ class DOMTextField
 						textField.__div = cast Browser.document.createElement("div");
 						renderer.__initializeElement(textField, textField.__div);
 						textField.__style.setProperty("outline", "none", null);
-						// Default color
-						textField.__style.setProperty("color", "#" + StringTools.hex(textField.textColor), null);
 
-						textField.__div.addEventListener("click", function(event)
-						{
-							var selection = Browser.window.getSelection();
-							if (textEngine.layoutGroups.length > 0)
-							{
-								if (textField.selectionBeginIndex == -1 && textField.selectionEndIndex == textField.text.length)
-								{
-									// All selection
-									selection.selectAllChildren(textField.__div);
-								}
-								else if (textField.selectionBeginIndex == textField.text.length
-									&& textField.selectionEndIndex == textField.text.length)
-								{
-									selection.selectAllChildren(textField.__div);
-									selection.collapseToEnd();
-								}
-							}
-						});
-
-						var _compositionstart = false;
-
-						function inputEvent(event)
+						textField.__div.addEventListener("input", function(event)
 						{
 							event.preventDefault();
-
-							if (_compositionstart)
-							{
-								return;
-							}
-
-							var lastText = textField.text;
 
 							// TODO: Set caret index, and replace only selection
 
 							if (textField.htmlText != textField.__div.innerHTML)
 							{
+								textField.htmlText = textField.__div.innerHTML;
+
 								if (textField.__displayAsPassword)
 								{
 									// TODO: Enable display as password
 								}
-								textField.htmlText = textField.__div.innerHTML;
 
-								var isChange = lastText.length == 0 || textField.length == 0;
-								textField.__dirty = isChange;
-								if (textField.__dirty)
-								{
-									textField.setSelection(textField.length, textField.length);
-									textField.__setRenderDirty();
-								}
+								textField.__dirty = false;
 
 								textField.dispatchEvent(new TextEvent(TextEvent.TEXT_INPUT, false, false, textField.htmlText));
-								textField.dispatchEvent(new TextEvent(Event.CHANGE, false, false));
 							}
-						}
-
-						textField.__div.addEventListener("input", inputEvent, true);
-
-						textField.__div.addEventListener("compositionstart", function(event)
-						{
-							_compositionstart = true;
-						});
-
-						textField.__div.addEventListener("compositionend", function(event)
-						{
-							_compositionstart = false;
-							inputEvent(event);
-						});
+						}, true);
 					}
 
 					if (!textEngine.wordWrap)
@@ -201,7 +150,6 @@ class DOMTextField
 
 					if (textEngine.background)
 					{
-						style.removeProperty("background");
 						style.setProperty("background-color", "#" + StringTools.hex(textEngine.backgroundColor & 0xFFFFFF, 6), null);
 					}
 					else
@@ -279,18 +227,16 @@ class DOMTextField
 					var scrollX = -textField.scrollH;
 					var scrollY = 0.0;
 
-					function parserGroupDiv(group:openfl.text._internal.TextLayoutGroup):String
+					for (group in textEngine.layoutGroups)
 					{
+						if (group.lineIndex < textField.scrollV - 1) continue;
+						if (group.lineIndex > textEngine.bottomScrollV - 1) break;
+
 						text += "<div style=\"";
 
 						if (group.format.font != null)
 						{
 							text += "font: " + TextEngine.getFont(group.format) + "; ";
-						}
-
-						if (textField.__displayAsPassword)
-						{
-							text += "font-family:'password';";
 						}
 
 						// if (group.format.size != null)
@@ -371,7 +317,7 @@ class DOMTextField
 						// var x = group.offsetX + scrollX - bounds.x;
 						// var y = group.offsetY + group.ascent + scrollY - bounds.y;
 						var x = group.offsetX + scrollX;
-						var y = group.offsetY + scrollY + 1;
+						var y = group.offsetY + scrollY + 3;
 
 						text += "left: " + x + "px; top: " + y + "px; vertical-align: top; position: absolute;\">";
 
@@ -385,23 +331,14 @@ class DOMTextField
 							text += "<a style='" + anchorStyle + "' href='" + group.format.url + "' target='" + group.format.target + "'>";
 						}
 
-						var content = "";
-
 						if (!textField.__isHTML)
 						{
-							content = StringTools.replace(StringTools.htmlEscape(textEngine.text.substring(group.startIndex, group.endIndex)), " ", "&nbsp;");
+							text += StringTools.replace(StringTools.htmlEscape(textEngine.text.substring(group.startIndex, group.endIndex)), " ", "&nbsp;");
 						}
 						else
 						{
-							content = StringTools.replace(textEngine.text.substring(group.startIndex, group.endIndex), " ", "&nbsp;");
+							text += StringTools.replace(textEngine.text.substring(group.startIndex, group.endIndex), " ", "&nbsp;");
 						}
-
-						if (textField.__displayAsPassword)
-						{
-							// TODO
-						}
-
-						text += content;
 
 						if (group.format.url != null && group.format.url != "")
 						{
@@ -409,15 +346,6 @@ class DOMTextField
 						}
 
 						text += "</div>";
-
-						return text;
-					}
-
-					for (group in textEngine.layoutGroups)
-					{
-						if (group.lineIndex < textField.scrollV - 1) continue;
-						if (group.lineIndex > textEngine.bottomScrollV - 1) break;
-						text += parserGroupDiv(group);
 					}
 
 					if (textEngine.border)
@@ -436,39 +364,7 @@ class DOMTextField
 					style.setProperty("width", w + "px", null);
 					style.setProperty("height", h + "px", null);
 
-					if (textField.__div.innerHTML != text)
-					{
-						textField.__div.innerHTML = text;
-					}
-
-					var selection = Browser.window.getSelection();
-
-					if (textField.__showCursor)
-					{
-						try
-						{
-							if (textEngine.layoutGroups.length > 0)
-							{
-								if (textField.selectionBeginIndex == -1 && textField.selectionEndIndex == textField.text.length)
-								{
-									// All Selection
-									selection.selectAllChildren(textField.__div);
-								}
-								else if (textField.selectionBeginIndex == textField.text.length
-									&& textField.selectionEndIndex == textField.text.length)
-								{
-									selection.selectAllChildren(textField.__div);
-									selection.collapseToEnd();
-								}
-							}
-							else
-							{
-								selection.selectAllChildren(textField.__div);
-								selection.collapseToEnd();
-							}
-						}
-						catch (_) {}
-					}
+					textField.__div.innerHTML = text;
 
 					// textField.__div.innerHTML = new EReg("\r\n", "g").replace(text, "<br>");
 					// textField.__div.innerHTML = new EReg("\n", "g").replace(textField.__div.innerHTML, "<br>");

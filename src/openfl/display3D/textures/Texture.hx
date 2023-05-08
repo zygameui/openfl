@@ -99,7 +99,8 @@ import openfl.utils.ByteArray;
 				var event:Event = null;
 
 				#if openfl_pool_events
-				event = Event.__pool.get(Event.TEXTURE_READY);
+				event = Event.__pool.get();
+				event.type = Event.TEXTURE_READY;
 				#else
 				event = new Event(Event.TEXTURE_READY);
 				#end
@@ -317,11 +318,10 @@ import openfl.utils.ByteArray;
 			__format = format;
 			__internalFormat = format;
 
-			trace("gpuFormat======", alpha, gpuFormat);
-
 			if (alpha && gpuFormat == 2)
 			{
 				var size = Std.int(blockLength / 2);
+
 				gl.compressedTexImage2D(__textureTarget, level, __internalFormat, width, height, 0,
 					new UInt8Array(#if js @:privateAccess bytes.b.buffer #else bytes #end, 0, size));
 

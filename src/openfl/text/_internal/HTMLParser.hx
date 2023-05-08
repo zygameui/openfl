@@ -216,11 +216,7 @@ class HTMLParser
 
 									if (firstChar == "+".code || firstChar == "-".code)
 									{
-										var parentFormat = (formatStack.length >= 2) ? formatStack[formatStack.length - 1] : textFormat;
-										for (index => format in formatStack)
-										{
-											trace(index, format.size);
-										}
+										var parentFormat = (formatStack.length >= 2) ? formatStack[formatStack.length - 2] : textFormat;
 										format.size = parentFormat.size + Std.parseInt(sizeAttr);
 									}
 									else

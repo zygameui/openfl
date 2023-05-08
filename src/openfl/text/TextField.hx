@@ -1736,6 +1736,23 @@ class TextField extends InteractiveObject
 		#if lime
 		if (stage != null)
 		{
+			#if (lime >= "8.0.0")
+			// ensure that the text field is not hidden by the soft keyboard
+			var bounds = getBounds(stage);
+			var limeRect = new lime.math.Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
+			#if openfl_dpi_aware
+			var scale = stage.window.scale;
+			if (scale != 1.0)
+			{
+				limeRect.x /= scale;
+				limeRect.y /= scale;
+				limeRect.width /= scale;
+				limeRect.height /= scale;
+			}
+			#end
+			stage.window.setTextInputRect(limeRect);
+			#end
+
 			stage.window.textInputEnabled = true;
 
 			if (!__inputEnabled)
@@ -2143,10 +2160,8 @@ class TextField extends InteractiveObject
 		{
 			__cursorTimer = Timer.delay(__startCursorTimer, 600);
 			__showCursor = !__showCursor;
-			#if !dom
 			__dirty = true;
 			__setRenderDirty();
-			#end
 		}
 		else if (selectable)
 		{
@@ -2169,11 +2184,6 @@ class TextField extends InteractiveObject
 		{
 			__enableInput();
 		}
-
-		#if dom
-		__dirty = true;
-		__setRenderDirty();
-		#end
 	}
 
 	@:noCompletion private function __stopCursorTimer():Void
@@ -2187,10 +2197,8 @@ class TextField extends InteractiveObject
 		if (__showCursor)
 		{
 			__showCursor = false;
-			#if !dom
 			__dirty = true;
 			__setRenderDirty();
-			#end
 		}
 	}
 
@@ -2336,6 +2344,11 @@ class TextField extends InteractiveObject
 		{
 			var i = lineIndex, tempHeight = 0.0;
 
+			if (i >= __textEngine.lineHeights.length)
+			{
+				i = __textEngine.lineHeights.length - 1;
+			}
+
 			while (i >= 0)
 			{
 				tempHeight += __textEngine.lineHeights[i];
@@ -2411,15 +2424,32 @@ class TextField extends InteractiveObject
 		__textEngine.text = value;
 		__text = __textEngine.text;
 
-		// the current selection should be kept, but it should also be adjusted,
-		// if the new text is not long enough
-		if (__text.length < __selectionIndex)
+		if (stage != null && stage.focus == this)
 		{
-			__selectionIndex = __text.length;
+			// when selected, the current selection should be kept, but it
+			// should also be adjusted, if the new text is not long enough
+			if (__text.length < __selectionIndex)
+			{
+				__selectionIndex = __text.length;
+			}
+			if (__text.length < __caretIndex)
+			{
+				__caretIndex = __text.length;
+			}
 		}
-		if (__text.length < __caretIndex)
+		else
 		{
-			__caretIndex = __text.length;
+			// setting text or htmlText clears the current selection
+			// but they actually clear it differently
+			if (__isHTML)
+			{
+				__selectionIndex = __caretIndex = __text.length;
+			}
+			else
+			{
+				__selectionIndex = 0;
+				__caretIndex = 0;
+			}
 		}
 
 		if (!__displayAsPassword #if (js && html5) || (DisplayObject.__supportDOM && !__renderedOnCanvasWhileOnDOM) #end)
@@ -2831,7 +2861,7 @@ class TextField extends InteractiveObject
 	{
 		__updateLayout();
 
-		if (value > 0 && value != __textEngine.scrollV || __textEngine.scrollV == 0)
+		if (value != __textEngine.scrollV || __textEngine.scrollV == 0)
 		{
 			__dirty = true;
 			__setRenderDirty();
@@ -3015,6 +3045,9 @@ class TextField extends InteractiveObject
 
 		if (value != __textEngine.type)
 		{
+			// set type here instead of in return below because this_onFocusIn()
+			// needs to know the correct type
+			__textEngine.type = value;
 			if (value == TextFieldType.INPUT)
 			{
 				addEventListener(Event.ADDED_TO_STAGE, this_onAddedToStage);
@@ -3035,7 +3068,7 @@ class TextField extends InteractiveObject
 			__setRenderDirty();
 		}
 
-		return __textEngine.type = value;
+		return __textEngine.type;
 	}
 
 	override private function get_width():Float
@@ -3206,32 +3239,15 @@ class TextField extends InteractiveObject
 	{
 		__stopCursorTimer();
 
-		// TODO: Better system
-
-		if (event.relatedObject == null || !(event.relatedObject is TextField))
-		{
-			__stopTextInput();
-		}
-		else
-		{
-			if (stage != null)
-			{
-				#if lime
-				stage.window.onTextInput.remove(window_onTextInput);
-				stage.window.onKeyDown.remove(window_onKeyDown);
-				#end
-			}
-
-			__inputEnabled = false;
-		}
+		// even if the related object is another TextField, we should stop
+		// text input. this ensures that any incomplete IME input is committed.
+		__stopTextInput();
 
 		if (__selectionIndex != __caretIndex)
 		{
 			__selectionIndex = __caretIndex;
-			#if !dom
 			__dirty = true;
 			__setRenderDirty();
-			#end
 		}
 	}
 
@@ -3262,6 +3278,10 @@ class TextField extends InteractiveObject
 			__dirty = true;
 			__setRenderDirty();
 		}
+
+		// stage could be null if the TextField was removed from stage in an
+		// earlier listener
+		if (stage == null) return;
 		#if !notextselectscroll
 		// Todo: Add flag and implementation for flash scrolling behavior.
 		stage.addEventListener(Event.ENTER_FRAME, this_onEnterFrame);

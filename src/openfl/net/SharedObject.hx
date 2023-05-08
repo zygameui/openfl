@@ -457,12 +457,14 @@ class SharedObject extends EventDispatcher
 		{
 			return SharedObjectFlushStatus.FLUSHED;
 		}
+
 		var encodedData = Serializer.run(data);
 
 		try
 		{
 			#if (js && html5)
 			var storage = Browser.getLocalStorage();
+
 			if (storage != null)
 			{
 				storage.removeItem(__localPath + ":" + __name);
@@ -486,6 +488,7 @@ class SharedObject extends EventDispatcher
 		{
 			return SharedObjectFlushStatus.PENDING;
 		}
+
 		return SharedObjectFlushStatus.FLUSHED;
 	}
 

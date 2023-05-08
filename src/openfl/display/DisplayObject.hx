@@ -1772,10 +1772,15 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 					var worldVisible = (renderParent.__worldVisible && __visible);
 					__worldVisibleChanged = (__worldVisible != worldVisible);
 					__worldVisible = worldVisible;
+
+					var worldAlpha = alpha * renderParent.__worldAlpha;
+					__worldAlphaChanged = (__worldAlpha != worldAlpha);
+					__worldAlpha = worldAlpha;
 				}
-				var worldAlpha = alpha * renderParent.__worldAlpha;
-				__worldAlphaChanged = (__worldAlpha != worldAlpha);
-				__worldAlpha = worldAlpha;
+				else
+				{
+					__worldAlpha = alpha * renderParent.__worldAlpha;
+				}
 
 				if (__objectTransform != null)
 				{
@@ -1823,8 +1828,9 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 				{
 					__worldVisibleChanged = (__worldVisible != __visible);
 					__worldVisible = __visible;
+
+					__worldAlphaChanged = (__worldAlpha != alpha);
 				}
-				__worldAlphaChanged = (__worldAlpha != alpha);
 
 				if (__objectTransform != null)
 				{
@@ -1964,9 +1970,16 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	{
 		if (value != null && value.length > 0)
 		{
-			// TODO: Copy incoming array values
-
-			__filters = value;
+			var clonedFilters:Array<BitmapFilter> = [];
+			
+			for (filter in value){
+				var clonedFilter:BitmapFilter = filter.clone();
+				
+				clonedFilter.__renderDirty = true;
+				clonedFilters.push(clonedFilter);				
+			}
+			
+			__filters = clonedFilters;
 			// __updateFilters = true;
 			__setRenderDirty();
 		}
@@ -1976,7 +1989,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			// __updateFilters = false;
 			__setRenderDirty();
 		}
-
+		
 		return value;
 	}
 

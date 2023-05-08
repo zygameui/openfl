@@ -40,21 +40,6 @@ import openfl.display._internal.Context3DBuffer;
 @:access(openfl.geom.Rectangle)
 class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayObject #end implements ITileContainer
 {
-	private var _readFlush:Bool = false;
-
-	private var _lock:Bool = false;
-
-	public function lock():Void
-	{
-		_lock = true;
-		_readFlush = false;
-	}
-
-	public function unlock():Void
-	{
-		_lock = false;
-	}
-
 	/**
 		Returns the number of tiles of this object.
 	**/
@@ -420,23 +405,23 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 	{
 		try
 		{
-			if (!hitObject.visible || __isMask) return false;
-			if (mask != null && !mask.__hitTestMask(x, y)) return false;
+		if (!hitObject.visible || __isMask) return false;
+		if (mask != null && !mask.__hitTestMask(x, y)) return false;
 
-			__getRenderTransform();
+		__getRenderTransform();
 
-			var px = __renderTransform.__transformInverseX(x, y);
-			var py = __renderTransform.__transformInverseY(x, y);
+		var px = __renderTransform.__transformInverseX(x, y);
+		var py = __renderTransform.__transformInverseY(x, y);
 
-			if (px > 0 && py > 0 && px <= __width && py <= __height)
+		if (px > 0 && py > 0 && px <= __width && py <= __height)
+		{
+			if (stack != null && !interactiveOnly)
 			{
-				if (stack != null && !interactiveOnly)
-				{
-					stack.push(hitObject);
-				}
-
-				return true;
+				stack.push(hitObject);
 			}
+
+			return true;
+		}
 		}
 		catch (e:Exception)
 		{

@@ -39,7 +39,6 @@ class Context3DBitmap
 			renderer.applyMatrix(renderer.__getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping));
 			renderer.applyAlpha(bitmap.__worldAlpha);
 			renderer.applyColorTransform(bitmap.__worldColorTransform);
-			// if (bitmap.shader != null) trace("updateShader=?", Type.getClass(bitmap.shader));
 			renderer.updateShader();
 
 			var vertexBuffer = bitmap.__bitmapData.getVertexBuffer(context);

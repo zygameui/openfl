@@ -1,7 +1,6 @@
 package openfl.display;
 
 #if !flash
-import openfl.utils.Function;
 import openfl.events.MouseEvent;
 
 /**
@@ -134,7 +133,6 @@ class MovieClip extends Sprite #if (openfl_dynamic && haxe_ver < "4.0.0") implem
 	**/
 	public var totalFrames(get, never):Int;
 
-	@:noCompletion private static var __constructor:MovieClip->Void;
 	// @:noCompletion @:dox(hide) public var trackAsMenu:Bool;
 	@:noCompletion private var __enabled:Bool;
 	@:noCompletion private var __hasDown:Bool;
@@ -174,15 +172,6 @@ class MovieClip extends Sprite #if (openfl_dynamic && haxe_ver < "4.0.0") implem
 
 		__enabled = true;
 		// __type = MOVIE_CLIP;
-
-		if (__constructor != null)
-		{
-			var method = __constructor;
-			__constructor = null;
-
-			method(this);
-		}
-
 	}
 
 	/**
