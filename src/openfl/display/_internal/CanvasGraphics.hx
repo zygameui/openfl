@@ -269,6 +269,8 @@ class CanvasGraphics
 			graphics.__context = hitTestContext;
 
 			context = graphics.__context;
+			// #FIX ZYGAMEUI
+			if (context == null) return false;
 			context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
 			fillCommands.clear();
