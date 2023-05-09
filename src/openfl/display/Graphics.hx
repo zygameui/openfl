@@ -1646,7 +1646,14 @@ import js.html.CanvasRenderingContext2D;
 		}
 		#end
 
+		#if zygameui
+		if(__bitmap != null){
+			__bitmap.dispose();
+		}
 		__bitmap = null;
+		#else
+		__bitmap = null;
+		#end
 
 		#if (js && html5)
 		__canvas = null;

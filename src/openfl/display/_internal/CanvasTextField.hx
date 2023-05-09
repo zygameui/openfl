@@ -110,7 +110,14 @@ class CanvasTextField
 			{
 				textField.__graphics.__canvas = null;
 				textField.__graphics.__context = null;
+				#if zygameui
+				if(textField.__graphics.__bitmap != null){
+					textField.__graphics.__bitmap.dispose();
+				}
 				textField.__graphics.__bitmap = null;
+				#else
+				textField.__graphics.__bitmap = null;
+				#end
 				textField.__graphics.__softwareDirty = false;
 				textField.__graphics.__dirty = false;
 				textField.__dirty = false;
@@ -368,6 +375,10 @@ class CanvasTextField
 					}
 				}
 
+				#if zygameui
+				if(graphics.__bitmap != null)
+					graphics.__bitmap.dispose();
+				#end
 				graphics.__bitmap = BitmapData.fromCanvas(textField.__graphics.__canvas);
 				graphics.__bitmapScale = pixelRatio;
 				graphics.__visible = true;

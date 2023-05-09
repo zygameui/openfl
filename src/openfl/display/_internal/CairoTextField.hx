@@ -152,6 +152,10 @@ class CairoTextField
 			graphics.__visible = true;
 			graphics.__managed = true;
 
+			#if zygameui
+			if(graphics.__bitmap != null)
+				graphics.__bitmap.dispose();
+			#end
 			graphics.__bitmap = bitmap;
 			graphics.__bitmapScale = pixelRatio;
 

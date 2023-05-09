@@ -269,8 +269,10 @@ class CanvasGraphics
 			graphics.__context = hitTestContext;
 
 			context = graphics.__context;
+			#if zygameui
 			// #FIX ZYGAMEUI
 			if (context == null) return false;
+			#end
 			context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
 			fillCommands.clear();
@@ -1167,7 +1169,14 @@ class CanvasGraphics
 			{
 				graphics.__canvas = null;
 				graphics.__context = null;
+				#if zygameui
+				if(graphics.__bitmap != null){
+					graphics.__bitmap.dispose();
+				}
 				graphics.__bitmap = null;
+				#else
+				graphics.__bitmap = null;
+				#end
 			}
 			else
 			{
@@ -1456,6 +1465,10 @@ class CanvasGraphics
 				}
 
 				data.destroy();
+				#if zygameui
+				if(graphics.__bitmap != null)
+					graphics.__bitmap.dispose();
+				#end
 				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
 			}
 
