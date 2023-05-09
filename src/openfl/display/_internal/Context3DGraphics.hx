@@ -504,7 +504,14 @@ class Context3DGraphics
 		}
 		else
 		{
+			#if zygameui
+			if(graphics.__bitmap != null){
+				graphics.__bitmap.dispose();
+			}
 			graphics.__bitmap = null;
+			#else
+			graphics.__bitmap = null;
+			#end
 			graphics.__update(renderer.__worldTransform);
 
 			var bounds = graphics.__bounds;

@@ -1163,7 +1163,14 @@ class CanvasGraphics
 			{
 				graphics.__canvas = null;
 				graphics.__context = null;
+				#if zygameui
+				if(graphics.__bitmap != null){
+					graphics.__bitmap.dispose();
+				}
 				graphics.__bitmap = null;
+				#else
+				graphics.__bitmap = null;
+				#end
 			}
 			else
 			{
@@ -1452,6 +1459,10 @@ class CanvasGraphics
 				}
 
 				data.destroy();
+				#if zygameui
+				if(graphics.__bitmap != null)
+					graphics.__bitmap.dispose();
+				#end
 				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
 			}
 
