@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+import openfl.events.Event;
 import openfl.text._internal.HTMLParser;
 import openfl.text._internal.TextEngine;
 import openfl.display.DOMRenderer;
@@ -91,10 +92,40 @@ class DOMTextField
 						textField.__div = cast Browser.document.createElement("div");
 						renderer.__initializeElement(textField, textField.__div);
 						textField.__style.setProperty("outline", "none", null);
+						// Default color
+						textField.__style.setProperty("color", "#" + StringTools.hex(textField.textColor), null);
 
-						textField.__div.addEventListener("input", function(event)
+						textField.__div.addEventListener("click", function(event)
+						{
+							var selection = Browser.window.getSelection();
+							if (textEngine.layoutGroups.length > 0)
+							{
+								if (textField.selectionBeginIndex == -1 && textField.selectionEndIndex == textField.text.length)
+								{
+									// All selection
+									selection.selectAllChildren(textField.__div);
+								}
+								else if (textField.selectionBeginIndex == textField.text.length
+									&& textField.selectionEndIndex == textField.text.length)
+								{
+									selection.selectAllChildren(textField.__div);
+									selection.collapseToEnd();
+								}
+							}
+						});
+
+						var _compositionstart = false;
+
+						function inputEvent(event)
 						{
 							event.preventDefault();
+
+							if (_compositionstart)
+							{
+								return;
+							}
+
+							var lastText = textField.text;
 
 							// TODO: Set caret index, and replace only selection
 
@@ -106,12 +137,33 @@ class DOMTextField
 								{
 									// TODO: Enable display as password
 								}
+								textField.htmlText = textField.__div.innerHTML;
 
-								textField.__dirty = false;
+								var isChange = lastText.length == 0 || textField.length == 0;
+								textField.__dirty = isChange;
+								if (textField.__dirty)
+								{
+									textField.setSelection(textField.length, textField.length);
+									textField.__setRenderDirty();
+								}
 
 								textField.dispatchEvent(new TextEvent(TextEvent.TEXT_INPUT, false, false, textField.htmlText));
+								textField.dispatchEvent(new TextEvent(Event.CHANGE, false, false));
 							}
-						}, true);
+						}
+
+						textField.__div.addEventListener("input", inputEvent, true);
+
+						textField.__div.addEventListener("compositionstart", function(event)
+						{
+							_compositionstart = true;
+						});
+
+						textField.__div.addEventListener("compositionend", function(event)
+						{
+							_compositionstart = false;
+							inputEvent(event);
+						});
 					}
 
 					if (!textEngine.wordWrap)
@@ -150,6 +202,7 @@ class DOMTextField
 
 					if (textEngine.background)
 					{
+						style.removeProperty("background");
 						style.setProperty("background-color", "#" + StringTools.hex(textEngine.backgroundColor & 0xFFFFFF, 6), null);
 					}
 					else
@@ -239,6 +292,11 @@ class DOMTextField
 							text += "font: " + TextEngine.getFont(group.format) + "; ";
 						}
 
+						if (textField.__displayAsPassword)
+						{
+							text += "font-family:'password';";
+						}
+
 						// if (group.format.size != null)
 						// {
 						// 	var size:Float = group.format.size;
@@ -317,7 +375,7 @@ class DOMTextField
 						// var x = group.offsetX + scrollX - bounds.x;
 						// var y = group.offsetY + group.ascent + scrollY - bounds.y;
 						var x = group.offsetX + scrollX;
-						var y = group.offsetY + scrollY + 3;
+						var y = group.offsetY + scrollY + 1;
 
 						text += "left: " + x + "px; top: " + y + "px; vertical-align: top; position: absolute;\">";
 
@@ -364,7 +422,39 @@ class DOMTextField
 					style.setProperty("width", w + "px", null);
 					style.setProperty("height", h + "px", null);
 
+					if (textField.__div.innerHTML != text)
+					{
 					textField.__div.innerHTML = text;
+					}
+
+					var selection = Browser.window.getSelection();
+
+					if (textField.__showCursor)
+					{
+						try
+						{
+							if (textEngine.layoutGroups.length > 0)
+							{
+								if (textField.selectionBeginIndex == -1 && textField.selectionEndIndex == textField.text.length)
+								{
+									// All Selection
+									selection.selectAllChildren(textField.__div);
+								}
+								else if (textField.selectionBeginIndex == textField.text.length
+									&& textField.selectionEndIndex == textField.text.length)
+								{
+									selection.selectAllChildren(textField.__div);
+									selection.collapseToEnd();
+								}
+							}
+							else
+							{
+								selection.selectAllChildren(textField.__div);
+								selection.collapseToEnd();
+							}
+						}
+						catch (_) {}
+					}
 
 					// textField.__div.innerHTML = new EReg("\r\n", "g").replace(text, "<br>");
 					// textField.__div.innerHTML = new EReg("\n", "g").replace(textField.__div.innerHTML, "<br>");
