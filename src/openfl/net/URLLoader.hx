@@ -284,7 +284,6 @@ class URLLoader extends EventDispatcher
 	public function load(request:URLRequest):Void
 	{
 		#if (lime && !macro)	
-			
 		var openEvent:Event = new Event(Event.OPEN);
 		dispatchEvent(openEvent);
 

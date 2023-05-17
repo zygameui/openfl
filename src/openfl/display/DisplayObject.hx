@@ -1972,7 +1972,8 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		{
 			var clonedFilters:Array<BitmapFilter> = [];
 			
-			for (filter in value){
+			for (filter in value)
+			{
 				var clonedFilter:BitmapFilter = filter.clone();
 				
 				clonedFilter.__renderDirty = true;
