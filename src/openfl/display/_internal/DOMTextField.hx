@@ -424,12 +424,12 @@ class DOMTextField
 
 					if (textField.__div.innerHTML != text)
 					{
-					textField.__div.innerHTML = text;
+						textField.__div.innerHTML = text;
 					}
 
 					var selection = Browser.window.getSelection();
-
-					if (textField.__showCursor)
+					// zygameui 修复选框异常的问题
+					if (Browser.window.document.activeElement == textField.__div || textField.__showCursor)
 					{
 						try
 						{
