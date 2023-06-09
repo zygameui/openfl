@@ -18,6 +18,7 @@ import lime._internal.graphics.ImageCanvasUtil; // TODO
 #end
 #if (js && html5)
 import js.html.CanvasElement;
+import js.html.CanvasGradient;
 import js.html.CanvasPattern;
 import js.html.CanvasRenderingContext2D;
 import js.html.CanvasWindingRule;
@@ -105,9 +106,9 @@ class CanvasGraphics
 			spreadMethod:SpreadMethod, interpolationMethod:InterpolationMethod, focalPointRatio:Float):#if (js && html5) CanvasPattern #else Void #end
 	{
 		#if (js && html5)
-		var gradientFill = null,
-			point = null,
-			point2 = null,
+		var gradientFill:CanvasGradient = null,
+			point:Point = null,
+			point2:Point = null,
 			releaseMatrix = false;
 
 		if (matrix == null)
@@ -136,7 +137,7 @@ class CanvasGraphics
 				inversePendingMatrix.invert();
 		}
 
-		var rgb, alpha, r, g, b, ratio;
+		var rgb:Int, alpha:Float, r:Float, g:Float, b:Float, ratio:Float;
 
 		for (i in 0...colors.length)
 		{
