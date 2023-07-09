@@ -136,6 +136,16 @@ class TextEngine
 		scrollV = 1;
 		wordWrap = false;
 
+		#if zygameui
+		lineAscents = new Vector(0, false);
+		lineBreaks = new Vector(0, false);
+		lineDescents = new Vector(0, false);
+		lineLeadings = new Vector(0, false);
+		lineHeights = new Vector(0, false);
+		lineWidths = new Vector(0, false);
+		layoutGroups = new Vector(0, false);
+		textFormatRanges = new Vector(0, false);
+		#else
 		lineAscents = new Vector();
 		lineBreaks = new Vector();
 		lineDescents = new Vector();
@@ -144,6 +154,7 @@ class TextEngine
 		lineWidths = new Vector();
 		layoutGroups = new Vector();
 		textFormatRanges = new Vector();
+		#end
 
 		#if (js && html5)
 		if (__context == null)

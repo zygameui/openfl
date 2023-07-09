@@ -82,8 +82,14 @@ import openfl.Vector;
 	**/
 	public function cubicCurveTo(controlX1:Float, controlY1:Float, controlX2:Float, controlY2:Float, anchorX:Float, anchorY:Float):Void
 	{
-		if (commands == null) commands = new Vector();
-		if (data == null) data = new Vector();
+		if (commands == null)
+		{
+			commands = new Vector(0, false);
+		}
+		if (data == null)
+		{
+			data = new Vector(0, false);
+		}
 
 		commands.push(GraphicsPathCommand.CUBIC_CURVE_TO);
 		data.push(controlX1);
@@ -113,8 +119,8 @@ import openfl.Vector;
 	**/
 	public function curveTo(controlX:Float, controlY:Float, anchorX:Float, anchorY:Float):Void
 	{
-		if (commands == null) commands = new Vector();
-		if (data == null) data = new Vector();
+		if (commands == null) commands = new Vector(0, false);
+		if (data == null) data = new Vector(0, false);
 
 		commands.push(GraphicsPathCommand.CURVE_TO);
 		data.push(controlX);
@@ -132,8 +138,8 @@ import openfl.Vector;
 	**/
 	public function lineTo(x:Float, y:Float):Void
 	{
-		if (commands == null) commands = new Vector();
-		if (data == null) data = new Vector();
+		if (commands == null) commands = new Vector(0, false);
+		if (data == null) data = new Vector(0, false);
 
 		commands.push(GraphicsPathCommand.LINE_TO);
 		data.push(x);
@@ -149,8 +155,8 @@ import openfl.Vector;
 	**/
 	public function moveTo(x:Float, y:Float):Void
 	{
-		if (commands == null) commands = new Vector();
-		if (data == null) data = new Vector();
+		if (commands == null) commands = new Vector(0, false);
+		if (data == null) data = new Vector(0, false);
 
 		commands.push(GraphicsPathCommand.MOVE_TO);
 		data.push(x);
@@ -166,8 +172,8 @@ import openfl.Vector;
 	**/
 	public function wideLineTo(x:Float, y:Float):Void
 	{
-		if (commands == null) commands = new Vector();
-		if (data == null) data = new Vector();
+		if (commands == null) commands = new Vector(0, false);
+		if (data == null) data = new Vector(0, false);
 
 		commands.push(GraphicsPathCommand.LINE_TO);
 		data.push(x);
@@ -183,8 +189,8 @@ import openfl.Vector;
 	**/
 	public function wideMoveTo(x:Float, y:Float):Void
 	{
-		if (commands == null) commands = new Vector();
-		if (data == null) data = new Vector();
+		if (commands == null) commands = new Vector(0, false);
+		if (data == null) data = new Vector(0, false);
 
 		commands.push(GraphicsPathCommand.MOVE_TO);
 		data.push(x);

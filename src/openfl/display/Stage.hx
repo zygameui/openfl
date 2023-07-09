@@ -975,7 +975,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		__displayRect = new Rectangle();
 		__renderDirty = true;
 
-		stage3Ds = new Vector();
+		stage3Ds = new Vector(0, false);
 		for (i in 0...#if mobile 2 #else 4 #end)
 		{
 			stage3Ds.push(new Stage3D(this));
