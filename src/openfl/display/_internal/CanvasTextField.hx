@@ -88,7 +88,9 @@ class CanvasTextField
 			graphics.__bounds.copyFrom(bounds);
 		}
 
-		#if (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
+		#if (zygameui && meituan)
+		var pixelRatio = 2;
+		#elseif (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
 		var pixelRatio = 1;
 		#else
 		var pixelRatio = renderer.__pixelRatio;
