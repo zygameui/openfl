@@ -132,7 +132,11 @@ class Bitmap extends DisplayObject
 	@:noCompletion private override function __getBounds(rect:Rectangle, matrix:Matrix):Void
 	{
 		var bounds = Rectangle.__pool.get();
-		if (__bitmapData != null)
+		// zygameui 需要兼容scrollRect的宽高
+		if (scrollRect != null){
+			bounds.setTo(0, 0, scrollRect.width, scrollRect.height);
+		}
+		else if (__bitmapData != null)
 		{
 			bounds.setTo(0, 0, __bitmapData.width, __bitmapData.height);
 		}
@@ -219,7 +223,12 @@ class Bitmap extends DisplayObject
 	{
 		if (__bitmapData != null)
 		{
-			scaleY = value / __bitmapData.height; // get_height();
+			// zygameui
+			if (scrollRect != null) {
+				scaleY = value / scrollRect.height;
+			} else {
+				scaleY = value / __bitmapData.height; // get_height();
+			}
 		}
 		else
 		{
@@ -232,7 +241,12 @@ class Bitmap extends DisplayObject
 	{
 		if (__bitmapData != null)
 		{
-			scaleX = value / __bitmapData.width; // get_width();
+			// zygameui
+			if (scrollRect != null) {
+				scaleX = value / scrollRect.width;
+			} else {
+				scaleX = value / __bitmapData.width; // get_width();
+			}
 		}
 		else
 		{
