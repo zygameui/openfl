@@ -504,14 +504,7 @@ class Context3DGraphics
 		}
 		else
 		{
-			#if zygameui
-			if(graphics.__bitmap != null){
-				graphics.__bitmap.dispose();
-			}
 			graphics.__bitmap = null;
-			#else
-			graphics.__bitmap = null;
-			#end
 
 			#if (openfl_disable_hdpi || openfl_disable_hdpi_graphics)
 			var pixelRatio = 1;
