@@ -1,5 +1,6 @@
 package openfl.display;
 
+import zygame.core.Start;
 #if !flash
 import openfl.display._internal.Context3DBitmap;
 import openfl.display._internal.Context3DBitmapData;
@@ -995,6 +996,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			if (height < 0) height = 0;
 
 			// __scissorRectangle.setTo (x, __flipped ? __height - y - height : y, width, height);
+			// zygameui: 这里兼容微信IOS旧机型发生渲染错误的问题
+			var stageWidth = Lib.current.stage.stageWidth;
+			var stageHeight = Lib.current.stage.stageHeight;
+			if (x >= stageWidth || y >= stageHeight || x + width <= 0 || y + height <= 0)
+			{
+				x = y = 0;
+				width = height = 1;
+			}
 			__scissorRectangle.setTo(x, y, width, height);
 			__context3D.setScissorRectangle(__scissorRectangle);
 		}
