@@ -1,6 +1,5 @@
 package openfl.display;
 
-import zygame.core.Start;
 #if !flash
 import openfl.display._internal.Context3DBitmap;
 import openfl.display._internal.Context3DBitmapData;
