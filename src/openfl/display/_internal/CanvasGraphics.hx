@@ -453,6 +453,11 @@ class CanvasGraphics
 
 			data.destroy();
 
+			// zygameui 需要释放
+			fillCommands.clear();
+			strokeCommands.clear();
+			CanvasGraphics.graphics = null;
+
 			graphics.__canvas = cacheCanvas;
 			graphics.__context = cacheContext;
 			return hitTest;
@@ -1068,8 +1073,7 @@ class CanvasGraphics
 						if (canOptimizeMatrix && st >= 0 && sl >= 0 && sr <= bitmapFill.width && sb <= bitmapFill.height)
 						{
 							optimizationUsed = true;
-							if (!hitTesting) context.drawImage(bitmapFill.image.src, sl, st, sr - sl, sb - st, c.x - offsetX, c.y - offsetY, c.width,
-								c.height);
+							if (!hitTesting) context.drawImage(bitmapFill.image.src, sl, st, sr - sl, sb - st, c.x - offsetX, c.y - offsetY, c.width, c.height);
 						}
 					}
 
@@ -1171,7 +1175,8 @@ class CanvasGraphics
 				graphics.__canvas = null;
 				graphics.__context = null;
 				#if zygameui
-				if(graphics.__bitmap != null){
+				if (graphics.__bitmap != null)
+				{
 					graphics.__bitmap.dispose();
 				}
 				graphics.__bitmap = null;
@@ -1467,14 +1472,14 @@ class CanvasGraphics
 
 				data.destroy();
 				#if zygameui
-				if(graphics.__bitmap != null)
-					graphics.__bitmap.dispose();
+				if (graphics.__bitmap != null) graphics.__bitmap.dispose();
 				#end
 				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
 			}
 
 			graphics.__softwareDirty = false;
 			graphics.__dirty = false;
+			CanvasGraphics.graphics = null;
 		}
 		#end
 	}
