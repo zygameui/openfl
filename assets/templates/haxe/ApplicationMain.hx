@@ -19,8 +19,11 @@ class ApplicationMain
 		lime.system.System.__registerEntryPoint("::APP_FILE::", create);
 
 		#if (js && html5)
+		// TODO 在使用单元测试的时候，不想启动两个embed
+		#if !zygameui
 		#if (munit || utest)
 		lime.system.System.embed("::APP_FILE::", null, ::WIN_WIDTH::, ::WIN_HEIGHT::);
+		#end
 		#end
 		#else
 		create(null);
