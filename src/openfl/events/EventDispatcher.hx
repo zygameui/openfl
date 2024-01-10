@@ -234,7 +234,9 @@ class EventDispatcher implements IEventDispatcher
 	**/
 	public function dispatchEvent(event:Event):Bool
 	{
+		#if cpp
 		try{
+		#end
 			if (__targetDispatcher != null)
 			{
 				event.target = __targetDispatcher;
@@ -245,10 +247,12 @@ class EventDispatcher implements IEventDispatcher
 			}
 
 			return __dispatchEvent(event);
+		#if cpp
 		}catch(e:haxe.Exception){
 			@:privateAccess Lib.current.stage.__handleError(e);
 			return false;
 		}
+		#end
 	}
 
 	/**
