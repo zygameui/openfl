@@ -78,7 +78,7 @@ class Context3DTilemap
 		}
 		else
 		{
-			resizeBuffer(tilemap, getLength(tilemap.__group));
+			resizeBuffer(tilemap, tilemap.__numTiles);
 		}
 
 		tilemap.__buffer.flushVertexBufferData();
@@ -635,6 +635,8 @@ class Context3DTilemap
 	private static function resizeBuffer(tilemap:Tilemap, count:Int):Void
 	{
 		numTiles = count;
+
+		tilemap.__numTiles = numTiles;
 
 		if (tilemap.__buffer == null)
 		{
