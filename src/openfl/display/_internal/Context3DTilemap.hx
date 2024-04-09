@@ -70,8 +70,9 @@ class Context3DTilemap
 		if (tilemap.tileAlphaEnabled) dataPerVertex++;
 		if (tilemap.tileColorTransformEnabled) dataPerVertex += 8;
 
-		if (vertexBufferData == null || tilemap.__group.__dirty)
+		if (vertexBufferData == null || tilemap.__group.__dirty || tilemap.__renderWorldAlpha != tilemap.__worldAlpha)
 		{
+			tilemap.__renderWorldAlpha = tilemap.__worldAlpha;
 			buildBufferTileContainer(tilemap, tilemap.__group, renderer, parentTransform, tilemap.__tileset, tilemap.tileAlphaEnabled, tilemap.__worldAlpha,
 				tilemap.tileColorTransformEnabled, tilemap.__worldColorTransform, null, rect, matrix);
 		}
