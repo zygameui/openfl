@@ -70,14 +70,34 @@ class Context3DTilemap
 		if (tilemap.tileAlphaEnabled) dataPerVertex++;
 		if (tilemap.tileColorTransformEnabled) dataPerVertex += 8;
 
-		buildBufferTileContainer(tilemap, tilemap.__group, renderer, parentTransform, tilemap.__tileset, tilemap.tileAlphaEnabled, tilemap.__worldAlpha,
-			tilemap.tileColorTransformEnabled, tilemap.__worldColorTransform, null, rect, matrix);
+		if (vertexBufferData == null || tilemap.__group.__dirty)
+		{
+			buildBufferTileContainer(tilemap, tilemap.__group, renderer, parentTransform, tilemap.__tileset, tilemap.tileAlphaEnabled, tilemap.__worldAlpha,
+				tilemap.tileColorTransformEnabled, tilemap.__worldColorTransform, null, rect, matrix);
+		}
+		else
+		{
+			resizeBuffer(tilemap, getLength(tilemap.__group));
+		}
 
 		tilemap.__buffer.flushVertexBufferData();
 
 		Rectangle.__pool.release(rect);
 		Matrix.__pool.release(matrix);
 		Matrix.__pool.release(parentTransform);
+	}
+
+	private static function getLength(_group:TileContainer):Int
+	{
+		var _tiles = _group.__tiles;
+		var totalLength = 0;
+		for (tile in _tiles)
+		{
+			if (tile.__length > 0) totalLength += getLength(cast tile);
+			else
+				totalLength++;
+		}
+		return totalLength;
 	}
 
 	private static function buildBufferTileContainer(tilemap:Tilemap, group:TileContainer, renderer:OpenGLRenderer, parentTransform:Matrix,
@@ -89,19 +109,6 @@ class Context3DTilemap
 
 		var tiles = group.__tiles;
 		var length = group.__length;
-
-		function getLength(_group:TileContainer):Int
-		{
-			var _tiles = _group.__tiles;
-			var totalLength = 0;
-			for (tile in _tiles)
-			{
-				if (tile.__length > 0) totalLength += getLength(cast tile);
-				else
-					totalLength++;
-			}
-			return totalLength;
-		}
 
 		if (isTopLevel) resizeBuffer(tilemap, numTiles + getLength(group));
 
