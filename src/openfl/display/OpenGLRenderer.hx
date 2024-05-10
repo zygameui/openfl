@@ -756,7 +756,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 		if (__defaultRenderTarget == null)
 		{
-			__scissorRectangle.setTo(__offsetX, __offsetY, __displayWidth, __displayHeight);
+			if (__context3D.__backBufferWantsBestResolution)
+			{
+				__scissorRectangle.setTo(__offsetX / __pixelRatio, __offsetY / __pixelRatio, __displayWidth / __pixelRatio, __displayHeight / __pixelRatio);
+			}
+			else
+			{
+				__scissorRectangle.setTo(__offsetX, __offsetY, __displayWidth, __displayHeight);
+			}
 			__context3D.setScissorRectangle(__scissorRectangle);
 
 			__upscaled = (__worldTransform.a != 1 || __worldTransform.d != 1);
@@ -816,7 +823,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		}
 		else
 		{
-			__scissorRectangle.setTo(__offsetX, __offsetY, __displayWidth, __displayHeight);
+			if (__context3D.__backBufferWantsBestResolution)
+			{
+				__scissorRectangle.setTo(__offsetX / __pixelRatio, __offsetY / __pixelRatio, __displayWidth / __pixelRatio, __displayHeight / __pixelRatio);
+			}
+			else
+			{
+				__scissorRectangle.setTo(__offsetX, __offsetY, __displayWidth, __displayHeight);
+			}
 			__context3D.setScissorRectangle(__scissorRectangle);
 			// __gl.viewport (__offsetX, __offsetY, __displayWidth, __displayHeight);
 
@@ -979,28 +993,16 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		{
 			var x:Float = Math.floor(clipRect.x);
 			var y:Float = Math.floor(clipRect.y);
-			// var x = clipRect.x;
-			// var y = clipRect.y;
 			var width:Float = (clipRect.width > 0 ? Math.ceil(clipRect.right) - x : 0);
 			var height:Float = (clipRect.height > 0 ? Math.ceil(clipRect.bottom) - y : 0);
-			// var width = (clipRect.width > 0 ? (clipRect.right) - x + 1 : 0);
-			// var height = (clipRect.height > 0 ? (clipRect.bottom) - y + 1 : 0);
 			#if !openfl_dpi_aware
 			if (__context3D.__backBufferWantsBestResolution)
 			{
-				// x = Math.floor(clipRect.x / __pixelRatio);
-				// y = Math.floor(clipRect.y / __pixelRatio);
 				var uv = 1.5 / __pixelRatio;
-				// var uWidth = 1.0 / Lib.current.stage.stageWidth;
-				// var uHeight = 1.0 / Lib.current.stage.stageHeight;
 				x = clipRect.x / __pixelRatio;
 				y = clipRect.y / __pixelRatio;
-				// width = (clipRect.width > 0 ? Math.ceil(clipRect.right / __pixelRatio) - x : 0);
-				// height = (clipRect.height > 0 ? Math.ceil(clipRect.bottom / __pixelRatio) - y : 0);
 				width = (clipRect.width > 0 ? (clipRect.right / __pixelRatio) - x + uv : 0);
 				height = (clipRect.height > 0 ? (clipRect.bottom / __pixelRatio) - y + uv : 0);
-				// width = (clipRect.width > 0 ? (clipRect.right / __pixelRatio) - x + uWidth : 0);
-				// height = (clipRect.height > 0 ? (clipRect.bottom / __pixelRatio) - y + uHeight : 0);
 			}
 			#end
 
