@@ -945,7 +945,7 @@ class BitmapData implements IBitmapDrawable
 				__renderer.__pushMaskRect(clipRect, clipMatrix);
 			}
 
-			__drawGL(source, renderer);
+			__drawGL(source, __renderer);
 
 			if (clipRect != null)
 			{
