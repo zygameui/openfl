@@ -220,6 +220,7 @@ class BitmapData implements IBitmapDrawable
 	@:noCompletion private var __worldAlpha:Float;
 	@:noCompletion private var __worldColorTransform:ColorTransform;
 	@:noCompletion private var __worldTransform:Matrix;
+	@:noCompletion private var __renderer:OpenGLRenderer;
 
 	/**
 		Creates a BitmapData object with a specified width and height. If you specify a value for
@@ -732,17 +733,17 @@ class BitmapData implements IBitmapDrawable
 	**/
 	public function dispose():Void
 	{
-		
 		#if (html5 && zygameui)
 		// 微信小游戏卸载内存使用
 		var getImage:Image = this.image;
 		if (getImage != null
 			&& getImage.buffer != null
-			&& untyped getImage.buffer.__srcImage != null && untyped getImage.buffer.__srcImage.disposeImage != null) {
+			&& untyped getImage.buffer.__srcImage != null && untyped getImage.buffer.__srcImage.disposeImage != null)
+		{
 			// 卸载内存
 			untyped getImage.buffer.__srcImage.disposeImage();
 		}
-        #end
+		#end
 
 		image = null;
 
@@ -928,27 +929,27 @@ class BitmapData implements IBitmapDrawable
 				_colorTransform.__combine(colorTransform);
 			}
 
-			var renderer = new OpenGLRenderer(Lib.current.stage.context3D, this);
-			renderer.__allowSmoothing = smoothing;
-			renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else Lib.current.stage.window.scale #end;
-			renderer.__overrideBlendMode = blendMode;
+			__renderer = new OpenGLRenderer(Lib.current.stage.context3D, this);
+			__renderer.__allowSmoothing = smoothing;
+			__renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else Lib.current.stage.window.scale #end;
+			__renderer.__overrideBlendMode = blendMode;
 
-			renderer.__worldTransform = transform;
-			renderer.__worldAlpha = 1 / source.__worldAlpha;
-			renderer.__worldColorTransform = _colorTransform;
+			__renderer.__worldTransform = transform;
+			__renderer.__worldAlpha = 1 / source.__worldAlpha;
+			__renderer.__worldColorTransform = _colorTransform;
 
-			renderer.__resize(width, height);
+			__renderer.__resize(width, height);
 
 			if (clipRect != null)
 			{
-				renderer.__pushMaskRect(clipRect, clipMatrix);
+				__renderer.__pushMaskRect(clipRect, clipMatrix);
 			}
 
 			__drawGL(source, renderer);
 
 			if (clipRect != null)
 			{
-				renderer.__popMaskRect();
+				__renderer.__popMaskRect();
 				Matrix.__pool.release(clipMatrix);
 			}
 		}
