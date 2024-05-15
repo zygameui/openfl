@@ -929,7 +929,9 @@ class BitmapData implements IBitmapDrawable
 				_colorTransform.__combine(colorTransform);
 			}
 
-			__renderer = new OpenGLRenderer(Lib.current.stage.context3D, this);
+			if(__renderer == null){
+				__renderer = new OpenGLRenderer(Lib.current.stage.context3D, this);
+			}
 			__renderer.__allowSmoothing = smoothing;
 			__renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else Lib.current.stage.window.scale #end;
 			__renderer.__overrideBlendMode = blendMode;
