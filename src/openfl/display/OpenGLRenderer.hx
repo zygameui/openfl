@@ -169,12 +169,12 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 		__defaultDisplayShader = __staticDefaultDisplayShader;
 		__defaultGraphicsShader = __staticDefaultGraphicsShader;
-		__defaultShader = __staticMaskShader;
+		__defaultShader = __defaultDisplayShader;
 
 		__initShader(__defaultShader);
 
 		__scrollRectMasks = new ObjectPool<Shape>(function() return new Shape());
-		__maskShader = new Context3DMaskShader();
+		__maskShader = __staticMaskShader;
 	}
 
 	/**
