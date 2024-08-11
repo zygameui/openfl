@@ -1,0 +1,4 @@
+--class-path src
+--library lime
+--define lime
+--interp
