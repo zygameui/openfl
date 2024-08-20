@@ -63,8 +63,8 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 	public var tileColorTransformEnabled:Bool;
 
 	/**
-		Enable or disable support for the `colorTransform` property of contained tiles.
-		Disabling this property can improve performance on certain renderers.
+		Enable or disable support for the multiTexture of tilemap.
+		Enabling this feature will reduce the number of draw calls.
 	**/
 	public var multiTextureEnabled:Bool;
 

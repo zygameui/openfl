@@ -494,7 +494,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			if (__currentShader.__hasColorTransform != null) __currentShader.__hasColorTransform.value = null;
 			if (__currentShader.__position != null) __currentShader.__position.value = null;
 			if (__currentShader.__matrix != null) __currentShader.__matrix.value = null;
-			//if (__currentShader.__textureId != null) __currentShader.__textureId.value = null;
+			if (__currentShader.__textureId != null) __currentShader.__textureId.value = null;
 			__currentShader.__clearUseArray();
 		}
 	}
