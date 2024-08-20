@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display3D.Context3DClearMask;
 import openfl.display.DisplayObject;
 import openfl.display.OpenGLRenderer;
@@ -59,8 +60,6 @@ class Context3DDisplayObject
 	{
 		renderer.__updateCacheBitmap(displayObject, false);
 
-		renderer.__renderEvent(displayObject);
-
 		if (displayObject.__cacheBitmap != null && !displayObject.__isCacheBitmapRender)
 		{
 			Context3DBitmap.render(displayObject.__cacheBitmap, renderer);
@@ -70,6 +69,7 @@ class Context3DDisplayObject
 			Context3DDisplayObject.render(displayObject, renderer);
 		}
 
+		renderer.__renderEvent(displayObject);
 	}
 
 	public static function renderDrawableMask(displayObject:DisplayObject, renderer:OpenGLRenderer):Void
@@ -114,3 +114,4 @@ class Context3DDisplayObject
 		}
 	}
 }
+#end

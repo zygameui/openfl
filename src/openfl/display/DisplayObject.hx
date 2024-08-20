@@ -181,10 +181,6 @@ import js.html.CSSStyleDeclaration;
 @:access(openfl.geom.Transform)
 class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (openfl_dynamic && haxe_ver < "4.0.0") implements Dynamic<DisplayObject> #end
 {
-	#if (queue_experimental_optimization && !dom)
-	@:noCompletion private static var queue:Array<DisplayObject> = [];
-	#end
-
 	@:noCompletion private static var __broadcastEvents:Map<String, Array<DisplayObject>> = new Map();
 	@:noCompletion private static var __initStage:Stage;
 	@:noCompletion private static var __instanceCount:Int = 0;
@@ -341,10 +337,11 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		`true`. The application uses this matrix as a transformation matrix that is applied when rendering the
 		bitmap version of the display object.
 
-		_AIR profile support:_ This feature is supported on mobile devices, but it is not supported on desktop
+		_Adobe AIR profile support:_ This feature is supported on mobile devices, but it is not supported on desktop
 		operating systems. It also has limited support on AIR for TV devices. Specifically, on AIR for TV devices,
-		supported transformations include scaling and translation, but not rotation and skewing. See AIR Profile
-		Support for more information regarding API support across multiple profiles.
+		supported transformations include scaling and translation, but not rotation and skewing. See
+		[AIR Profile Support](http://help.adobe.com/en_US/air/build/WS144092a96ffef7cc16ddeea2126bb46b82f-8000.html)
+		for more information regarding API support across multiple profiles.
 
 		With `cacheAsBitmapMatrix` set, the application retains a cached bitmap image across various 2D
 		transformations, including translation, rotation, and scaling. If the application uses hardware acceleration,
@@ -647,7 +644,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	**/
 	// @:noCompletion @:dox(hide) @:require(flash10) public var rotationX:Float;
 	#end
-
 	#if false
 	/**
 		Indicates the y-axis rotation of the DisplayObject instance, in degrees, from its original orientation
@@ -657,7 +653,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	**/
 	// @:noCompletion @:dox(hide) @:require(flash10) public var rotationY:Float;
 	#end
-
 	#if false
 	/**
 		Indicates the z-axis rotation of the DisplayObject instance, in degrees, from its original orientation
@@ -783,7 +778,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		property of the `scrollRect` Rectangle object. You can scroll
 		an object up and down by setting the `y` property of the
 		`scrollRect` Rectangle object. If the display object is rotated
-		90� and you scroll it left and right, the display object actually scrolls
+		90° and you scroll it left and right, the display object actually scrolls
 		up and down.
 	**/
 	public var scrollRect(get, set):Rectangle;
@@ -874,9 +869,9 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		to the local coordinates of the parent DisplayObjectContainer. If the
 		object is inside a DisplayObjectContainer that has transformations, it is
 		in the local coordinate system of the enclosing DisplayObjectContainer.
-		Thus, for a DisplayObjectContainer rotated 90� counterclockwise, the
+		Thus, for a DisplayObjectContainer rotated 90° counterclockwise, the
 		DisplayObjectContainer's children inherit a coordinate system that is
-		rotated 90� counterclockwise. The object's coordinates refer to the
+		rotated 90° counterclockwise. The object's coordinates refer to the
 		registration point position.
 	**/
 	@:keep public var x(get, set):Float;
@@ -886,9 +881,9 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		to the local coordinates of the parent DisplayObjectContainer. If the
 		object is inside a DisplayObjectContainer that has transformations, it is
 		in the local coordinate system of the enclosing DisplayObjectContainer.
-		Thus, for a DisplayObjectContainer rotated 90� counterclockwise, the
+		Thus, for a DisplayObjectContainer rotated 90° counterclockwise, the
 		DisplayObjectContainer's children inherit a coordinate system that is
-		rotated 90� counterclockwise. The object's coordinates refer to the
+		rotated 90° counterclockwise. The object's coordinates refer to the
 		registration point position.
 	**/
 	@:keep public var y(get, set):Float;
@@ -1573,7 +1568,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 		if (transformDirty)
 		{
-			var list = [];
+			var list:Array<DisplayObject> = [];
 			var current = this;
 
 			if (parent == null)
@@ -1671,27 +1666,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		}
 	}
 
-	#if (queue_experimental_optimization && !dom)
-	@:noCompletion private var _flag:Bool = false;
-
-	@:noCompletion inline private function __updateFlag(add:Bool = true):Void
-	{
-		if (add)
-		{
-			if (!_flag)
-			{
-				_flag = true;
-				DisplayObject.queue.push(this);
-			}
-		}
-		else
-		{
-			_flag = false;
-			DisplayObject.queue.remove(this);
-		}
-	}
-	#end
-
 	@:noCompletion private inline function __setRenderDirty():Void
 	{
 		if (!__renderDirty)
@@ -1699,9 +1673,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			__renderDirty = true;
 			__setParentRenderDirty();
 		}
-		#if (queue_experimental_optimization && !dom)
-		__updateFlag();
-		#end
 	}
 
 	@:noCompletion private function __setStageReference(stage:Stage):Void
@@ -1718,9 +1689,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			__setWorldTransformInvalid();
 			__setParentRenderDirty();
 		}
-		#if (queue_experimental_optimization && !dom)
-		__updateFlag();
-		#end
 	}
 
 	@:noCompletion private function __setWorldTransformInvalid():Void
@@ -1736,10 +1704,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		if (__isMask && renderParent == null) renderParent = __maskTarget;
 		__renderable = (__visible && __scaleX != 0 && __scaleY != 0 && !__isMask && (renderParent == null || !renderParent.__isMask));
 		__updateTransforms();
-
-		#if (queue_experimental_optimization && !dom)
-		transformOnly = false;
-		#end
 
 		// if (updateChildren && __transformDirty) {
 
@@ -1971,15 +1935,15 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		if (value != null && value.length > 0)
 		{
 			var clonedFilters:Array<BitmapFilter> = [];
-			
+
 			for (filter in value)
 			{
 				var clonedFilter:BitmapFilter = filter.clone();
-				
+
 				clonedFilter.__renderDirty = true;
-				clonedFilters.push(clonedFilter);				
+				clonedFilters.push(clonedFilter);
 			}
-			
+
 			__filters = clonedFilters;
 			// __updateFilters = true;
 			__setRenderDirty();
@@ -1990,7 +1954,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			// __updateFilters = false;
 			__setRenderDirty();
 		}
-		
+
 		return value;
 	}
 

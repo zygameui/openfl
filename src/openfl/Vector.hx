@@ -165,9 +165,7 @@ abstract Vector<T>(IVector<T>)
 		@param	fixed	Whether the Vector's length is fixed (`true`) or can be changed
 		(`false`). This value can also be set using the fixed property.
 	**/
-	#if (zygame && mac)
-	public function new(length:Null<Int> = 0, fixed:Null<Bool> = false, array:Array<T> = null):Void;
-	#elseif !flash
+	#if !flash
 	public function new(length:Null<Int> = 0, fixed:Null<Bool> = false, array:Array<T> = null):Void;
 	#else
 	public function new(length:Null<Int> = 0, fixed:Null<Bool> = false, array:Array<T> = null):Void
@@ -218,7 +216,7 @@ abstract Vector<T>(IVector<T>)
 		is invoked with three arguments: the current item from the Vector, the index of
 		the item, and the Vector object:
 
-			 	```hx
+			 	```haxe
 			 	function callback(item:T, index:Int, vector:Vector<T>):Bool {
 			 		// your code here
 		}
@@ -453,7 +451,7 @@ abstract Vector<T>(IVector<T>)
 		invoked with three arguments: the current item from the Vector, the index of the item,
 		and the Vector object:
 
-		```hx
+		```haxe
 		function callback(item:T, index:Int, vector:Vector<T>):Bool
 		```
 
@@ -606,7 +604,7 @@ abstract Vector<T>(IVector<T>)
 	**/
 	@:generic public inline static function ofArray<T>(array:Array<T>):Vector<T>
 	{
-		var vector:Vector<T> = new Vector<T>(0, false);
+		var vector:Vector<T> = new Vector<T>();
 
 		for (i in 0...array.length)
 		{
@@ -2263,7 +2261,7 @@ abstract Vector<T>(VectorData<T>) from VectorData<T>
 		");
 	}
 
-	public function new(?length:Null<Int>, ?fixed:Null<Bool>, ?array:VectorData<T>)
+	public function new(?length:Int, ?fixed:Bool, ?array:VectorData<T>)
 	{
 		construct(this, length, fixed);
 	}
@@ -2345,7 +2343,7 @@ abstract Vector<T>(VectorData<T>) from VectorData<T>
 	{
 		if (a == null) return null;
 
-		var data = new VectorData<T>(0, false);
+		var data = new VectorData<T>();
 		for (i in 0...a.length)
 		{
 			// data[i] = untyped #if haxe4 js.Syntax.code #else __js__ #end ("a[i] === a[i] ? a[i] : null");
@@ -2551,7 +2549,7 @@ abstract Vector<T>(VectorData<T>)
 	{
 		if (array != null)
 		{
-			this = VectorData.ofArray(array);
+			this = ofArray(array);
 		}
 		else
 		{
@@ -2689,9 +2687,16 @@ abstract Vector<T>(VectorData<T>)
 		this.unshift(x);
 	}
 
-	public inline static function ofArray<T>(a:Array<Dynamic>):Vector<T>
+	public inline static function ofArray<T>(a:Array<T>):Vector<T>
 	{
-		return VectorData.ofArray(a);
+		if (a == null) return null;
+
+		var vec = new VectorData<T>();
+		for (i in 0...a.length)
+		{
+			vec[i] = a[i];
+		}
+		return vec;
 	}
 
 	public inline static function convert<T, U>(v:Vector<T>):Vector<U>

@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.text._internal.HTMLParser;
 import openfl.text._internal.TextEngine;
 import openfl.display.BitmapData;
@@ -88,9 +89,7 @@ class CanvasTextField
 			graphics.__bounds.copyFrom(bounds);
 		}
 
-		#if (zygameui && meituan)
-		var pixelRatio = 2;
-		#elseif (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
+		#if (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
 		var pixelRatio = 1;
 		#else
 		var pixelRatio = renderer.__pixelRatio;
@@ -112,14 +111,7 @@ class CanvasTextField
 			{
 				textField.__graphics.__canvas = null;
 				textField.__graphics.__context = null;
-				#if zygameui
-				if(textField.__graphics.__bitmap != null){
-					textField.__graphics.__bitmap.dispose();
-				}
 				textField.__graphics.__bitmap = null;
-				#else
-				textField.__graphics.__bitmap = null;
-				#end
 				textField.__graphics.__softwareDirty = false;
 				textField.__graphics.__dirty = false;
 				textField.__dirty = false;
@@ -160,6 +152,11 @@ class CanvasTextField
 				{
 					context.clearRect(0, 0, graphics.__canvas.width, graphics.__canvas.height);
 				}
+
+				#if openfl_hack_fix_chrome_text
+				context.fillStyle = "rgba(0, 0, 0, 0.01)";
+				context.fillRect(0, 0, graphics.__canvas.width, graphics.__canvas.height);
+				#end
 
 				if ((textEngine.text != null && textEngine.text != "") || textEngine.__hasFocus)
 				{
@@ -203,7 +200,7 @@ class CanvasTextField
 						scrollY -= textEngine.lineHeights[i];
 					}
 
-					var advance;
+					var advance:Float;
 
 					for (group in textEngine.layoutGroups)
 					{
@@ -377,10 +374,6 @@ class CanvasTextField
 					}
 				}
 
-				#if zygameui
-				if(graphics.__bitmap != null)
-					graphics.__bitmap.dispose();
-				#end
 				graphics.__bitmap = BitmapData.fromCanvas(textField.__graphics.__canvas);
 				graphics.__bitmapScale = pixelRatio;
 				graphics.__visible = true;
@@ -457,3 +450,4 @@ class CanvasTextField
 		CanvasDisplayObject.renderDrawableMask(textField, renderer);
 	}
 }
+#end

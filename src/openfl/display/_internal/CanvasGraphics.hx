@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.BitmapData;
 import openfl.display.CanvasRenderer;
 import openfl.display.CapsStyle;
@@ -102,7 +103,7 @@ class CanvasGraphics
 	}
 
 	@SuppressWarnings("checkstyle:Dynamic")
-	private static function createGradientPattern(type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix,
+	private static function createGradientPattern(type:GradientType, colors:Array<Int>, alphas:Array<Float>, ratios:Array<Int>, matrix:Matrix,
 			spreadMethod:SpreadMethod, interpolationMethod:InterpolationMethod, focalPointRatio:Float):#if (js && html5) CanvasPattern #else Void #end
 	{
 		#if (js && html5)
@@ -247,6 +248,7 @@ class CanvasGraphics
 
 		if (graphics.__commands.length == 0 || bounds == null || bounds.width <= 0 || bounds.height <= 0)
 		{
+			CanvasGraphics.graphics = null;
 			return false;
 		}
 		else
@@ -270,10 +272,6 @@ class CanvasGraphics
 			graphics.__context = hitTestContext;
 
 			context = graphics.__context;
-			#if zygameui
-			// #FIX ZYGAMEUI
-			if (context == null) return false;
-			#end
 			context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
 			fillCommands.clear();
@@ -334,6 +332,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -344,6 +343,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -358,6 +358,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -368,6 +369,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -453,13 +455,9 @@ class CanvasGraphics
 
 			data.destroy();
 
-			// zygameui 需要释放
-			fillCommands.clear();
-			strokeCommands.clear();
-			CanvasGraphics.graphics = null;
-
 			graphics.__canvas = cacheCanvas;
 			graphics.__context = cacheContext;
+			CanvasGraphics.graphics = null;
 			return hitTest;
 		}
 		#end
@@ -1174,15 +1172,7 @@ class CanvasGraphics
 			{
 				graphics.__canvas = null;
 				graphics.__context = null;
-				#if zygameui
-				if (graphics.__bitmap != null)
-				{
-					graphics.__bitmap.dispose();
-				}
 				graphics.__bitmap = null;
-				#else
-				graphics.__bitmap = null;
-				#end
 			}
 			else
 			{
@@ -1471,9 +1461,6 @@ class CanvasGraphics
 				}
 
 				data.destroy();
-				#if zygameui
-				if (graphics.__bitmap != null) graphics.__bitmap.dispose();
-				#end
 				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
 			}
 
@@ -1609,3 +1596,4 @@ private typedef NormalizedUVT =
 	max:Float,
 	uvt:Vector<Float>
 }
+#end

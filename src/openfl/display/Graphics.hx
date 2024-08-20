@@ -166,6 +166,14 @@ import js.html.CanvasRenderingContext2D;
 	**/
 	public function beginBitmapFill(bitmap:BitmapData, matrix:Matrix = null, repeat:Bool = true, smooth:Bool = false):Void
 	{
+		if (!bitmap.readable)
+		{
+			// begin bitmap fill doesn't work with a hardware-only bitmap
+			// to avoid exceptions, delegate to beginFill()
+			beginFill(0, 1.0);
+			return;
+		}
+
 		__commands.beginBitmapFill(bitmap, matrix != null ? matrix.clone() : null, repeat, smooth);
 
 		__visible = true;
@@ -1443,6 +1451,16 @@ import js.html.CanvasRenderingContext2D;
 	public function lineStyle(thickness:Null<Float> = null, color:Int = 0, alpha:Float = 1, pixelHinting:Bool = false,
 			scaleMode:LineScaleMode = LineScaleMode.NORMAL, caps:CapsStyle = null, joints:JointStyle = null, miterLimit:Float = 3):Void
 	{
+		if (caps == null)
+		{
+			caps = CapsStyle.ROUND;
+		}
+
+		if (joints == null)
+		{
+			joints = JointStyle.ROUND;
+		}
+
 		if (thickness != null)
 		{
 			if (joints == JointStyle.MITER)
@@ -1612,14 +1630,7 @@ import js.html.CanvasRenderingContext2D;
 		}
 		#end
 
-		#if zygameui
-		if(__bitmap != null){
-			__bitmap.dispose();
-		}
 		__bitmap = null;
-		#else
-		__bitmap = null;
-		#end
 
 		#if (js && html5)
 		__canvas = null;
@@ -1751,7 +1762,8 @@ import js.html.CanvasRenderingContext2D;
 	@:noCompletion private function __readGraphicsData(graphicsData:Vector<IGraphicsData>):Void
 	{
 		var data = new DrawCommandReader(__commands);
-		var path = null, stroke;
+		var path:GraphicsPath = null;
+		var stroke:GraphicsStroke;
 
 		for (type in __commands.types)
 		{
@@ -1982,8 +1994,8 @@ import js.html.CanvasRenderingContext2D;
 		}
 		else
 		{
-		__worldTransform.tx = Math.fround(tx);
-		__worldTransform.ty = Math.fround(ty);
+			__worldTransform.tx = Math.fround(tx);
+			__worldTransform.ty = Math.fround(ty);
 		}
 
 		// Offset the rendering with the subpixel offset removed by Math.round above

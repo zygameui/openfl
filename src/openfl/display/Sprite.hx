@@ -256,6 +256,15 @@ class Sprite extends DisplayObjectContainer
 		}
 	}
 
+	@:noCompletion private override function __setStageReference(stage:Stage):Void
+	{
+		if (this.stage != stage && this.stage != null && this.stage.__dragObject == this)
+		{
+			stopDrag();
+		}
+		super.__setStageReference(stage);
+	}
+
 	#if false
 	/**
 		Ends the `startTouchDrag()` method, for use with touch-enabled
@@ -290,10 +299,6 @@ class Sprite extends DisplayObjectContainer
 	@:noCompletion private override function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
 			hitObject:DisplayObject):Bool
 	{
-		// ZYGAMEUI 不兼容shapeFlag避免无法触摸
-		#if unshape_flag
-		shapeFlag = false;
-		#end
 		if (interactiveOnly && !mouseEnabled && !mouseChildren) return false;
 		if (!hitObject.visible || __isMask) return __hitTestHitArea(x, y, shapeFlag, stack, interactiveOnly, hitObject);
 		if (mask != null && !mask.__hitTestMask(x, y)) return __hitTestHitArea(x, y, shapeFlag, stack, interactiveOnly, hitObject);

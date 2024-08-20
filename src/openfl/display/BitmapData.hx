@@ -131,6 +131,10 @@ class BitmapData implements IBitmapDrawable
 	@:noCompletion private static var __tempVector:Vector2 = new Vector2();
 	#end
 
+	public var tilemapMultiTextureArrayIndex:Int;
+
+	public var tilemapMultiTextureId:Int;
+
 	/**
 		The height of the bitmap image in pixels.
 	**/
@@ -149,8 +153,10 @@ class BitmapData implements IBitmapDrawable
 	/**
 		Defines whether the bitmap image is readable. Hardware-only bitmap images
 		do not support `getPixels`, `setPixels` and other
-		BitmapData methods, though they can still be used inside a Bitmap object
-		or other display objects that do not need to modify the pixels.
+		BitmapData methods, nor may they be used with
+		`Graphics.beginBitmapFill`. However, hardware-only bitmap images may
+		still be used inside a Bitmap object or other display objects that do
+		not need to modify the pixels.
 
 		As an exception to the rule, `bitmapData.draw` is supported for
 		non-readable bitmap images.
@@ -220,7 +226,6 @@ class BitmapData implements IBitmapDrawable
 	@:noCompletion private var __worldAlpha:Float;
 	@:noCompletion private var __worldColorTransform:ColorTransform;
 	@:noCompletion private var __worldTransform:Matrix;
-	@:noCompletion private var __renderer:OpenGLRenderer;
 
 	/**
 		Creates a BitmapData object with a specified width and height. If you specify a value for
@@ -352,8 +357,8 @@ class BitmapData implements IBitmapDrawable
 		var needSecondBitmapData = filter.__needSecondBitmapData;
 		var needCopyOfOriginal = filter.__preserveObject;
 
-		var bitmapData2 = null;
-		var bitmapData3 = null;
+		var bitmapData2:BitmapData = null;
+		var bitmapData3:BitmapData = null;
 
 		if (needSecondBitmapData)
 		{
@@ -398,7 +403,7 @@ class BitmapData implements IBitmapDrawable
 	public function clone():BitmapData
 	{
 		#if lime
-		var bitmapData;
+		var bitmapData:BitmapData;
 
 		if (!__isValid)
 		{
@@ -506,7 +511,7 @@ class BitmapData implements IBitmapDrawable
 			}
 		}
 
-		var bitmapData = null;
+		var bitmapData:BitmapData = null;
 		var foundDifference,
 			pixel:ARGB,
 			otherPixel:ARGB,
@@ -733,18 +738,6 @@ class BitmapData implements IBitmapDrawable
 	**/
 	public function dispose():Void
 	{
-		#if (html5 && zygameui)
-		// 微信小游戏卸载内存使用
-		var getImage:Image = this.image;
-		if (getImage != null
-			&& getImage.buffer != null
-			&& untyped getImage.buffer.__srcImage != null && untyped getImage.buffer.__srcImage.disposeImage != null)
-		{
-			// 卸载内存
-			untyped getImage.buffer.__srcImage.disposeImage();
-		}
-		#end
-
 		image = null;
 
 		width = 0;
@@ -903,7 +896,7 @@ class BitmapData implements IBitmapDrawable
 			transform.concat(matrix);
 		}
 
-		var clipMatrix = null;
+		var clipMatrix:Matrix = null;
 
 		if (clipRect != null)
 		{
@@ -929,35 +922,27 @@ class BitmapData implements IBitmapDrawable
 				_colorTransform.__combine(colorTransform);
 			}
 
-			if (__renderer == null)
-			{
-				__renderer = new OpenGLRenderer(Lib.current.stage.context3D, this);
-			}
-			else
-			{
-				@:privateAccess __renderer.__cleanup();
-				__renderer.setShader(@:privateAccess __renderer.__defaultShader);
-			}
-			__renderer.__allowSmoothing = smoothing;
-			__renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else Lib.current.stage.window.scale #end;
-			__renderer.__overrideBlendMode = blendMode;
+			var renderer = new OpenGLRenderer(Lib.current.stage.context3D, this);
+			renderer.__allowSmoothing = smoothing;
+			renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else Lib.current.stage.window.scale #end;
+			renderer.__overrideBlendMode = blendMode;
 
-			__renderer.__worldTransform = transform;
-			__renderer.__worldAlpha = 1 / source.__worldAlpha;
-			__renderer.__worldColorTransform = _colorTransform;
+			renderer.__worldTransform = transform;
+			renderer.__worldAlpha = 1 / source.__worldAlpha;
+			renderer.__worldColorTransform = _colorTransform;
 
-			__renderer.__resize(width, height);
+			renderer.__resize(width, height);
 
 			if (clipRect != null)
 			{
-				__renderer.__pushMaskRect(clipRect, clipMatrix);
+				renderer.__pushMaskRect(clipRect, clipMatrix);
 			}
 
-			__drawGL(source, __renderer);
+			__drawGL(source, renderer);
 
 			if (clipRect != null)
 			{
-				__renderer.__popMaskRect();
+				renderer.__popMaskRect();
 				Matrix.__pool.release(clipMatrix);
 			}
 		}
@@ -1223,8 +1208,11 @@ class BitmapData implements IBitmapDrawable
 
 	#if (!openfl_doc_gen || (!js && !html5 && !flash_doc_gen))
 	/**
-		Creates a new BitmapData instance from Base64-encoded data synchronously. This means
-		that the BitmapData will be returned immediately (if supported).
+		Creates a new BitmapData instance from Base64-encoded data
+		synchronously. This means that the BitmapData will be returned
+		immediately (if supported). The bytes must be of a supported bitmap file
+		format, such as PNG or JPG. To use raw ARGB pixel data, call
+		`setPixels` or `setVector` instead.
 
 		HTML5 and Flash do not support creating BitmapData synchronously, so these targets
 		always return `null`. Other targets will return `null` if decoding was unsuccessful.
@@ -1247,9 +1235,11 @@ class BitmapData implements IBitmapDrawable
 
 	#if (!openfl_doc_gen || (!js && !html5 && !flash_doc_gen))
 	/**
-		Creates a new BitmapData from bytes (a haxe.io.Bytes or openfl.utils.ByteArray)
-		synchronously. This means that the BitmapData will be returned immediately (if
-		supported).
+		Creates a new BitmapData from bytes (a `haxe.io.Bytes` or
+		`openfl.utils.ByteArray`) synchronously. This means that the BitmapData
+		will be returned immediately (if supported). The bytes must be of a
+		supported bitmap file format, such as PNG or JPG. To use raw ARGB pixel
+		data, call `setPixels` or `setVector` instead.
 
 		HTML5 and Flash do not support creating BitmapData synchronously, so these targets
 		always return `null`. Other targets will return `null` if decoding was unsuccessful.
@@ -1345,12 +1335,16 @@ class BitmapData implements IBitmapDrawable
 	/**
 		**BETA**
 
-		Creates a new BitmapData instance from a Stage3D rectangle texture.
+		Creates a new BitmapData instance from a Stage3D rectangle texture. The
+		BitmapData instance will hardware-only, and the `readable` property will
+		be false, meaning that some operations will not be permitted.
 
 		This method is not supported by the Flash target.
 
 		@param	texture	A Texture or RectangleTexture instance
 		@returns	A new BitmapData if successful, or `null` if unsuccessful
+
+		@see `BitmapData.readable`
 	**/
 	public static function fromTexture(texture:TextureBase):BitmapData
 	{
@@ -2461,7 +2455,7 @@ class BitmapData implements IBitmapDrawable
 			{
 				var pixels = getPixels(secondRectangle);
 				var length = Std.int(pixels.length / 4);
-				var pixel;
+				var pixel:UInt;
 
 				for (i in 0...length)
 				{

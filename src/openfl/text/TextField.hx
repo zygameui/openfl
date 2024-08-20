@@ -1239,7 +1239,7 @@ class TextField extends InteractiveObject
 	**/
 	public function getTextFormat(beginIndex:Int = -1, endIndex:Int = -1):TextFormat
 	{
-		var format = null;
+		var format:TextFormat = null;
 
 		if (beginIndex >= text.length || beginIndex < -1 || endIndex > text.length || endIndex < -1)
 			throw new RangeError("The supplied index is out of bounds");
@@ -1438,7 +1438,7 @@ class TextField extends InteractiveObject
 	public function setTextFormat(format:TextFormat, beginIndex:Int = -1, endIndex:Int = -1):Void
 	{
 		var max = text.length;
-		var range;
+		var range:TextFormatRange;
 
 		if (beginIndex == -1)
 		{
@@ -1482,7 +1482,7 @@ class TextField extends InteractiveObject
 		else
 		{
 			var index = 0;
-			var newRange;
+			var newRange:TextFormatRange;
 
 			while (index < __textEngine.textFormatRanges.length)
 			{
@@ -1575,7 +1575,7 @@ class TextField extends InteractiveObject
 				{
 					// should never happen, throw an error
 					index++;
-					Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and contact Joshua Granick (@singmajesty) so we can fix this.");
+					Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and create an issue on GitHub so we can fix this.");
 				}
 			}
 			/*
@@ -1605,6 +1605,14 @@ class TextField extends InteractiveObject
 		__dirty = true;
 		__layoutDirty = true;
 		__setRenderDirty();
+	}
+
+	@:noCompletion private override function __setStageReference(stage:Stage):Void
+	{
+		// call __stopTextInput() before this.stage is set to null to ensure
+		// that all window listeners are removed to avoid a memory leak
+		__stopTextInput();
+		super.__setStageReference(stage);
 	}
 
 	@:noCompletion private override function __allowMouseFocus():Bool
@@ -2071,7 +2079,7 @@ class TextField extends InteractiveObject
 		var offset = newText.length - (endIndex - beginIndex);
 
 		var i = 0;
-		var range;
+		var range:TextFormatRange;
 
 		while (i < __textEngine.textFormatRanges.length)
 		{
@@ -2084,7 +2092,7 @@ class TextField extends InteractiveObject
 					// this should only ever be true if there is no text (start == end == 0)
 					if (range.start != 0)
 					{
-						Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and contact Joshua Granick (@singmajesty) so we can fix this.");
+						Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and create an issue on GitHub so we can fix this.");
 					}
 					else
 					{
@@ -2181,10 +2189,8 @@ class TextField extends InteractiveObject
 				__cursorTimer = Timer.delay(__startCursorTimer, 600);
 				__showCursor = !__showCursor;
 			}
-			#if (!dom && zygameui)
 			__dirty = true;
 			__setRenderDirty();
-			#end
 		}
 		else if (selectable)
 		{
@@ -2207,11 +2213,6 @@ class TextField extends InteractiveObject
 		{
 			__enableInput();
 		}
-
-		#if (dom && zygameui)
-		__dirty = true;
-		__setRenderDirty();
-		#end
 	}
 
 	@:noCompletion private function __stopCursorTimer():Void
@@ -2225,19 +2226,9 @@ class TextField extends InteractiveObject
 		if (__showCursor)
 		{
 			__showCursor = false;
-			#if (!dom && zygameui)
 			__dirty = true;
 			__setRenderDirty();
-			#end
 		}
-	}
-
-	@:noCompletion private override function __setStageReference(stage:Stage):Void
-	{
-		// call __stopTextInput() before this.stage is set to null to ensure
-		// that all window listeners are removed to avoid a memory leak
-		__stopTextInput();
-		super.__setStageReference(stage);
 	}
 
 	@:noCompletion private function __stopTextInput():Void
@@ -2282,11 +2273,45 @@ class TextField extends InteractiveObject
 		}
 	}
 
+	@:noCompletion private function __updateMouseDrag():Void
+	{
+		if (stage == null) return;
+
+		var bounds:Rectangle = this.getBounds(this);
+
+		if (mouseX > bounds.width - 1)
+		{
+			scrollH += Std.int(Math.max(Math.min((mouseX - bounds.width) * .1, 10), 1));
+		}
+		else if (mouseX < 1)
+		{
+			scrollH -= Std.int(Math.max(Math.min(mouseX * -.1, 10), 1));
+		}
+
+		__mouseScrollVCounter++;
+
+		if (__mouseScrollVCounter > stage.frameRate / 10)
+		{
+			if (mouseY > bounds.height - 2)
+			{
+				scrollV = Std.int(Math.min(scrollV + Math.max(Math.min((mouseY - bounds.height) * .03, 5), 1), maxScrollV));
+			}
+			else if (mouseY < 2)
+			{
+				scrollV -= Std.int(Math.max(Math.min(mouseY * -.03, 5), 1));
+			}
+			__mouseScrollVCounter = 0;
+		}
+		stage_onMouseMove(null);
+	}
+
 	@:noCompletion private function __updateScrollH():Void
 	{
 		__updateLayout();
 
-		if (textWidth <= width - 4)
+		var bounds:Rectangle = this.getBounds(this);
+
+		if (textWidth <= bounds.width - 4)
 		{
 			scrollH = 0;
 			return;
@@ -2322,7 +2347,7 @@ class TextField extends InteractiveObject
 			{
 				tempScrollH -= 24;
 			}
-			while (caret.x > tempScrollH + width - 4)
+			while (caret.x > tempScrollH + bounds.width - 4)
 			{
 				tempScrollH += 24;
 			}
@@ -2334,9 +2359,9 @@ class TextField extends InteractiveObject
 		{
 			// input text leaves some room after scrolling to the last character in a line. dynamic text does not
 			var lineLength = getLineLength(getLineIndexOfChar(__caretIndex));
-			if (scrollH + width - 4 > lineLength)
+			if (scrollH + bounds.width - 4 > lineLength)
 			{
-				scrollH = Math.ceil(lineLength - width + 4);
+				scrollH = Math.ceil(lineLength - bounds.width + 4);
 			}
 		}
 
@@ -2352,8 +2377,6 @@ class TextField extends InteractiveObject
 		{
 			scrollH = tempScrollH;
 		}
-
-		// TODO: Handle drag select
 	}
 
 	@:noCompletion private function __updateScrollV():Void
@@ -2416,36 +2439,6 @@ class TextField extends InteractiveObject
 
 			scrollV = scrollV;
 		}
-	}
-
-	@:noCompletion private function __updateMouseDrag():Void
-	{
-		if (stage == null) return;
-
-		if (mouseX > this.width - 1)
-		{
-			scrollH += Std.int(Math.max(Math.min((mouseX - this.width) * .1, 10), 1));
-		}
-		else if (mouseX < 1)
-		{
-			scrollH -= Std.int(Math.max(Math.min(mouseX * -.1, 10), 1));
-		}
-
-		__mouseScrollVCounter++;
-
-		if (__mouseScrollVCounter > stage.frameRate / 10)
-		{
-			if (mouseY > this.height - 2)
-			{
-				scrollV = Std.int(Math.min(scrollV + Math.max(Math.min((mouseY - this.height) * .03, 5), 1), maxScrollV));
-			}
-			else if (mouseY < 2)
-			{
-				scrollV -= Std.int(Math.max(Math.min(mouseY * -.03, 5), 1));
-			}
-			__mouseScrollVCounter = 0;
-		}
-		stage_onMouseMove(null);
 	}
 
 	@:noCompletion private function __updateText(value:String):Void
@@ -2899,6 +2892,9 @@ class TextField extends InteractiveObject
 	{
 		__updateLayout();
 
+		if (value > __textEngine.maxScrollV) value = __textEngine.maxScrollV;
+		if (value < 1) value = 1;
+
 		if (value != __textEngine.scrollV || __textEngine.scrollV == 0)
 		{
 			__dirty = true;
@@ -3284,10 +3280,8 @@ class TextField extends InteractiveObject
 		if (__selectionIndex != __caretIndex)
 		{
 			__selectionIndex = __caretIndex;
-			#if (!dom && zygameui)
 			__dirty = true;
 			__setRenderDirty();
-			#end
 		}
 	}
 
@@ -3296,7 +3290,7 @@ class TextField extends InteractiveObject
 		#if (lime && !openfl_doc_gen)
 		if (selectable && type != INPUT && event.keyCode == Keyboard.C && (event.commandKey || event.ctrlKey))
 		{
-			if (__caretIndex != __selectionIndex)
+			if (__caretIndex != __selectionIndex && !displayAsPassword)
 			{
 				Clipboard.text = __text.substring(__caretIndex, __selectionIndex);
 			}
@@ -3559,7 +3553,7 @@ class TextField extends InteractiveObject
 				#if lime
 				if (isModifierPressed())
 				{
-					if (__caretIndex != __selectionIndex)
+					if (__caretIndex != __selectionIndex && !displayAsPassword)
 					{
 						Clipboard.text = __text.substring(__caretIndex, __selectionIndex);
 					}
@@ -3570,7 +3564,7 @@ class TextField extends InteractiveObject
 				#if lime
 				if (isModifierPressed())
 				{
-					if (__caretIndex != __selectionIndex)
+					if (__caretIndex != __selectionIndex && !displayAsPassword)
 					{
 						Clipboard.text = __text.substring(__caretIndex, __selectionIndex);
 

@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.OpenGLRenderer;
 import openfl.media.Video;
 #if gl_stats
@@ -94,8 +95,8 @@ class Context3DVideo
 
 	public static function renderDrawable(video:Video, renderer:OpenGLRenderer):Void
 	{
-		renderer.__renderEvent(video);
 		Context3DVideo.render(video, renderer);
+		renderer.__renderEvent(video);
 	}
 
 	public static function renderDrawableMask(video:Video, renderer:OpenGLRenderer):Void
@@ -134,3 +135,4 @@ class Context3DVideo
 		#end
 	}
 }
+#end

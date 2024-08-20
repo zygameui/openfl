@@ -370,7 +370,7 @@ class SharedObject extends EventDispatcher
 		Call the `connect()` method to connect to a remote shared object, for
 		example:
 
-		```as3
+		```haxe
 		var myRemoteSO:SharedObject = SharedObject.getRemote("mo", myNC.uri, false);
 		myRemoteSO.connect(myNC);
 		```
@@ -680,7 +680,7 @@ class SharedObject extends EventDispatcher
 
 		if (!__sharedObjects.exists(id))
 		{
-			var encodedData = null;
+			var encodedData:String = null;
 
 			try
 			{
@@ -747,7 +747,7 @@ class SharedObject extends EventDispatcher
 		`connect()` to connect the remote shared object to the server, as in
 		the following:
 
-		```as3
+		```haxe
 		var nc:NetConnection = new NetConnection();
 		nc.connect("rtmp://somedomain.com/applicationName");
 		var myRemoteSO:SharedObject = SharedObject.getRemote("mo", nc.uri, false);

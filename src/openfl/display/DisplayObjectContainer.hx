@@ -43,11 +43,6 @@ import openfl.Vector;
 @:access(openfl.geom.Rectangle)
 class DisplayObjectContainer extends InteractiveObject
 {
-
-	#if (queue_experimental_optimization && !dom)
-	public var __updateRequired:Bool = true;
-	#end
-
 	/**
 		Determines whether or not the children of the object are mouse, or user
 		input device, enabled. If an object is enabled, a user can interact with
@@ -197,6 +192,12 @@ class DisplayObjectContainer extends InteractiveObject
 		{
 			var error = new TypeError("Error #2007: Parameter child must be non-null.");
 			error.errorID = 2007;
+			throw error;
+		}
+		else if (child == this)
+		{
+			var error = new ArgumentError("Error #2024: An object cannot be added as a child of itself.");
+			error.errorID = 2024;
 			throw error;
 		}
 		#if ((haxe_ver >= "3.4.0") || !cpp)

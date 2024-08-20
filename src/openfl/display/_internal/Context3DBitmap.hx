@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.Bitmap;
 import openfl.display.OpenGLRenderer;
 #if gl_stats
@@ -67,9 +68,6 @@ class Context3DBitmap
 			bitmap.__imageVersion = bitmap.__bitmapData.image.version;
 		}
 
-		// todo zygameui 这是调整了位置的
-		renderer.__renderEvent(bitmap);
-
 		if (bitmap.__cacheBitmap != null && !bitmap.__isCacheBitmapRender)
 		{
 			Context3DBitmap.render(bitmap.__cacheBitmap, renderer);
@@ -80,6 +78,7 @@ class Context3DBitmap
 			Context3DBitmap.render(bitmap, renderer);
 		}
 
+		renderer.__renderEvent(bitmap);
 	}
 
 	public static function renderDrawableMask(bitmap:Bitmap, renderer:OpenGLRenderer):Void
@@ -113,3 +112,4 @@ class Context3DBitmap
 		}
 	}
 }
+#end

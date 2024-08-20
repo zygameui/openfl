@@ -1,6 +1,5 @@
 package openfl.display;
 
-import haxe.Exception;
 import openfl.display._internal.FlashRenderer;
 import openfl.display._internal.FlashTilemap;
 import openfl.geom.Matrix;
@@ -64,6 +63,12 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 	public var tileColorTransformEnabled:Bool;
 
 	/**
+		Enable or disable support for the `colorTransform` property of contained tiles.
+		Disabling this property can improve performance on certain renderers.
+	**/
+	public var multiTextureEnabled:Bool;
+
+	/**
 		Optionally define a default Tileset to be used for all contained tiles. Tile
 		instances that do not have their `tileset` property defined will use this value.
 
@@ -83,8 +88,6 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 
 	@:noCompletion private var __group:TileContainer;
 	@:noCompletion private var __tileset:Tileset;
-	@:noCompletion private var __renderWorldAlpha:Float = 1;
-	@:noCompletion private var __numTiles:Int = 0;
 	#if !flash
 	@:noCompletion private var __buffer:Context3DBuffer;
 	@:noCompletion private var __bufferDirty:Bool;
@@ -129,6 +132,7 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 		tileAlphaEnabled = true;
 		tileBlendModeEnabled = true;
 		tileColorTransformEnabled = true;
+		multiTextureEnabled = false;
 
 		__group = new TileContainer();
 		__group.tileset = tileset;
@@ -405,8 +409,6 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 	@:noCompletion private override function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
 			hitObject:DisplayObject):Bool
 	{
-		try
-		{
 		if (!hitObject.visible || __isMask) return false;
 		if (mask != null && !mask.__hitTestMask(x, y)) return false;
 
@@ -424,11 +426,7 @@ class Tilemap extends #if !flash DisplayObject #else Bitmap implements IDisplayO
 
 			return true;
 		}
-		}
-		catch (e:Exception)
-		{
-			return false;
-		}
+
 		return false;
 	}
 	#end
