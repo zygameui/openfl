@@ -51,7 +51,7 @@ class Context3DTilemap
 	private static var numTiles:Int;
 	private static var vertexBufferData:Float32Array;
 	private static var vertexDataPosition:Int;
-	private static inline var batchingSize:Int = 16;
+	private static inline var batchingSize:Int = 1;
 	private static var lastMultiTextureIndex:Int = 0;
 	private static var multiTextureBitmapDataArray:Array<BitmapData> = [];
 	private static var multiTextureShaders:Array<Shader> = []; // Math.floor(index / batchingSize)
