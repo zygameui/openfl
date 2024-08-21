@@ -127,7 +127,7 @@ class Context3DTilemap
 		Matrix.__pool.release(parentTransform);
 	}
 
-	private static function update(tilemap:Tilemap, _group:TileContainer, bitmapData:BitmapData):Void
+	private static function update(tilemap:Tilemap, _group:TileContainer #if openfl_experimental_multitexture, bitmapData:BitmapData #end):Void
 	{
 		var _tiles = _group.__tiles;
 		for (tile in _tiles)
@@ -151,7 +151,11 @@ class Context3DTilemap
 
 			if (tile.__length > 0)
 			{
+				#if openfl_experimental_multitexture
 				update(tilemap, cast tile, bitmapData);
+				#else
+				update(tilemap, cast tile);
+				#end
 			}
 			else
 			{
@@ -172,8 +176,12 @@ class Context3DTilemap
 
 		if (isTopLevel)
 		{
-			var bitmapData:BitmapData = tilemap.tileset != null ? tilemap.tileset.bitmapData : null;
-			update(tilemap, group, bitmapData);
+			#if openfl_experimental_multitexture
+			var topBitmapData:BitmapData = tilemap.tileset != null ? tilemap.tileset.bitmapData : null;
+			update(tilemap, group, topBitmapData);
+			#else
+			update(tilemap, group);
+			#end
 
 			resizeBuffer(tilemap, numTiles);
 			#if openfl_experimental_multitexture
@@ -211,7 +219,7 @@ class Context3DTilemap
 		var alphaPosition = 4;
 		#if openfl_experimental_multitexture
 		var textureIdPosition = alphaPosition + ((tilemap.tileAlphaEnabled && tilemap.multiTextureEnabled) ? 1 : 0);
-		var ctPosition = textureIdPosition + ((tilemap.tileAlphaEnabled && tilemap.multiTextureEnabled) ? 1 : 0);
+		var ctPosition = textureIdPosition + (colorTransformEnabled ? 1 : 0);
 		#else
 		var ctPosition = tilemap.tileAlphaEnabled ? 5 : 4;
 		#end
@@ -366,15 +374,15 @@ class Context3DTilemap
 					{
 						for (i in 0...4)
 						{
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition] = 1;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 1] = 1;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 2] = 1;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 3] = 1;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition] = colorTransform.redMultiplier;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 1] = colorTransform.greenMultiplier;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 2] = colorTransform.blueMultiplier;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 3] = colorTransform.alphaMultiplier;
 
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 4] = 0;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 5] = 0;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 6] = 0;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 7] = 0;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 4] = colorTransform.redOffset;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 5] = colorTransform.greenOffset;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 6] = colorTransform.blueOffset;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 7] = colorTransform.alphaOffset;
 						}
 					}
 					else
@@ -453,7 +461,10 @@ class Context3DTilemap
 			}
 
 			#if openfl_experimental_multitexture
-			renderer.applyTextureId(currentBitmapData.tilemapMultiTextureId);
+			if (multiTextureEnabled)
+			{
+				renderer.applyTextureId(currentBitmapData.tilemapMultiTextureId);
+			}
 			#end
 			renderer.updateShader();
 
@@ -787,8 +798,6 @@ class Context3DTilemap
 
 	private static function resizeBuffer(tilemap:Tilemap, count:Int):Void
 	{
-		// numTiles = count;
-
 		if (tilemap.__buffer == null)
 		{
 			tilemap.__buffer = new Context3DBuffer(context, QUADS, numTiles, dataPerVertex);
