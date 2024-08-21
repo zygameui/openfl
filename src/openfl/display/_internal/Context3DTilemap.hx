@@ -13,13 +13,14 @@ import openfl.display3D.Context3D;
 import openfl.geom.ColorTransform;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
-import openfl.display.MultiTextureShader;
-import openfl.display3D.Context3DTextureFilter;
 #if gl_stats
 import openfl.display._internal.stats.Context3DStats;
 import openfl.display._internal.stats.DrawCallContext;
 #end
-import haxe.ds.Vector;
+#if openfl_experimental_multitexture
+import openfl.display.MultiTextureShader;
+import openfl.display3D.Context3DTextureFilter;
+#end
 
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
@@ -27,6 +28,9 @@ import haxe.ds.Vector;
 #end
 @:access(openfl.display3D.Context3D)
 @:access(openfl.display3D.VertexBuffer3D)
+#if openfl_experimental_multitexture
+@:access(openfl.display.BitmapData)
+#end
 @:access(openfl.display.Shader)
 @:access(openfl.display.Tilemap)
 @:access(openfl.display.Tileset)
@@ -43,8 +47,10 @@ class Context3DTilemap
 	private static var dataPerVertex:Int;
 	private static var currentBitmapData:BitmapData;
 	private static var currentBlendMode:BlendMode;
-	private static var tilemapMultiTextureArrayIndex:Int = -1;
 	private static var currentShader:Shader;
+	#if openfl_experimental_multitexture
+	private static var lastUsedMultiTextureShaderIndex:Int;
+	#end
 	private static var bufferPosition:Int;
 	private static var lastFlushedPosition:Int;
 	private static var lastUsedBitmapData:BitmapData;
@@ -53,12 +59,14 @@ class Context3DTilemap
 	private static var vertexBufferData:Float32Array;
 	private static var vertexDataPosition:Int;
 
+	#if openfl_experimental_multitexture
 	private static var multiTextureEnabled:Bool = false;
-	private static var multiTextureSize:Null<Int> = null;
-	private static var lastMultiTextureIndex:Int = 0;
-	private static var multiTextureBitmapDataArray:Array<BitmapData> = [];
+	private static var multiTextureSize:Null<Int>;
+	private static var lastMultiTextureIndex:Int;
+	private static var multiTextureBitmapDataArray:Array<BitmapData>;
 	private static var tempMultiTextureShaders:Array<MultiTextureShader> = [];
-	private static var multiTextureShaders:Array<MultiTextureShader> = new Array<MultiTextureShader>();
+	private static var multiTextureShaders:Array<MultiTextureShader> = [];
+	#end
 
 	public static function buildBuffer(tilemap:Tilemap, renderer:OpenGLRenderer):Void
 	{
@@ -70,6 +78,7 @@ class Context3DTilemap
 			return;
 		}
 
+		#if openfl_experimental_multitexture
 		for (i in 0...tempMultiTextureShaders.length)
 		{
 			if (tempMultiTextureShaders[i] != null) multiTextureShaders[i] = tempMultiTextureShaders[i];
@@ -91,6 +100,8 @@ class Context3DTilemap
 
 		multiTextureBitmapDataArray = [];
 		lastMultiTextureIndex = 0;
+		#end
+
 		numTiles = 0;
 		vertexBufferData = (tilemap.__buffer != null) ? tilemap.__buffer.vertexBufferData : null;
 		vertexDataPosition = 0;
@@ -101,9 +112,10 @@ class Context3DTilemap
 
 		dataPerVertex = 4;
 		if (tilemap.tileAlphaEnabled) dataPerVertex++;
-		if (tilemap.tileColorTransformEnabled) dataPerVertex += 8;
-
+		#if openfl_experimental_multitexture
 		if (multiTextureEnabled) dataPerVertex++;
+		#end
+		if (tilemap.tileColorTransformEnabled) dataPerVertex += 8;
 
 		buildBufferTileContainer(tilemap, tilemap.__group, renderer, parentTransform, tilemap.__tileset, tilemap.tileAlphaEnabled, tilemap.__worldAlpha,
 			tilemap.tileColorTransformEnabled, tilemap.__worldColorTransform, null, rect, matrix);
@@ -120,6 +132,7 @@ class Context3DTilemap
 		var _tiles = _group.__tiles;
 		for (tile in _tiles)
 		{
+			#if openfl_experimental_multitexture
 			if (multiTextureEnabled)
 			{
 				bitmapData = tile.tileset != null ? tile.tileset.bitmapData : bitmapData;
@@ -134,10 +147,17 @@ class Context3DTilemap
 					bitmapData = null;
 				}
 			}
+			#end
 
-			if (tile.__length > 0) update(tilemap, cast tile, bitmapData);
-			else
+			if (tile.__length > 0)
+			{
 				numTiles++;
+				update(tilemap, cast tile, bitmapData);
+			}
+			else
+			{
+				numTiles++;
+			}
 		}
 	}
 
@@ -157,7 +177,7 @@ class Context3DTilemap
 			update(tilemap, group, bitmapData);
 
 			resizeBuffer(tilemap, numTiles);
-
+			#if openfl_experimental_multitexture
 			if (multiTextureEnabled)
 			{
 				var filter:Context3DTextureFilter = (tilemap.smoothing && renderer.__allowSmoothing) ? LINEAR : NEAREST;
@@ -173,6 +193,7 @@ class Context3DTilemap
 					bitmapDataInput.filter = filter;
 				}
 			}
+			#end
 		}
 
 		var tile,
@@ -188,8 +209,12 @@ class Context3DTilemap
 		var x, y, x2, y2, x3, y3, x4, y4;
 
 		var alphaPosition = 4;
-		var textureIdPosition = tilemap.tileAlphaEnabled ? 5 : 4;
-		var ctPosition = textureIdPosition + 1;
+		#if openfl_experimental_multitexture
+		var textureIdPosition = alphaPosition + (tilemap.tileAlphaEnabled ? 1 : 0);
+		var ctPosition = textureIdPosition + (textureIdPosition != alphaPosition ? 1 : 0);
+		#else
+		var ctPosition = tilemap.tileAlphaEnabled ? 5 : 4;
+		#end
 
 		for (tile in tiles)
 		{
@@ -325,6 +350,7 @@ class Context3DTilemap
 					}
 				}
 
+				#if openfl_experimental_multitexture
 				if (multiTextureEnabled)
 				{
 					for (i in 0...4)
@@ -332,6 +358,7 @@ class Context3DTilemap
 						vertexBufferData[vertexOffset + (dataPerVertex * i) + textureIdPosition] = bitmapData.tilemapMultiTextureId;
 					}
 				}
+				#end
 
 				if (colorTransformEnabled)
 				{
@@ -339,15 +366,15 @@ class Context3DTilemap
 					{
 						for (i in 0...4)
 						{
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition] = colorTransform.redMultiplier;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 1] = colorTransform.greenMultiplier;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 2] = colorTransform.blueMultiplier;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 3] = colorTransform.alphaMultiplier;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition] = 1;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 1] = 1;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 2] = 1;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 3] = 1;
 
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 4] = colorTransform.redOffset;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 5] = colorTransform.greenOffset;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 6] = colorTransform.blueOffset;
-							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 7] = colorTransform.alphaOffset;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 4] = 0;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 5] = 0;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 6] = 0;
+							vertexBufferData[vertexOffset + (dataPerVertex * i) + ctPosition + 7] = 0;
 						}
 					}
 					else
@@ -382,6 +409,7 @@ class Context3DTilemap
 			currentShader = renderer.__defaultDisplayShader;
 		}
 
+		#if openfl_experimental_multitexture
 		if (multiTextureEnabled && currentBitmapData != null && currentShader == renderer.__defaultDisplayShader)
 		{
 			var batchIndex:Int = currentBitmapData.tilemapMultiTextureArrayIndex;
@@ -391,6 +419,7 @@ class Context3DTilemap
 			// IDK how to fix it.
 			tempMultiTextureShaders[batchIndex] = multiTextureShader;
 		}
+		#end
 
 		if (bufferPosition > lastFlushedPosition && currentBitmapData != null && currentShader != null)
 		{
@@ -423,7 +452,9 @@ class Context3DTilemap
 				renderer.applyColorTransform(tilemap.__worldColorTransform);
 			}
 
+			#if openfl_experimental_multitexture
 			renderer.applyTextureId(currentBitmapData.tilemapMultiTextureId);
+			#end
 			renderer.updateShader();
 
 			var vertexBuffer = tilemap.__buffer.vertexBuffer;
@@ -440,42 +471,48 @@ class Context3DTilemap
 				if (shader.__position != null)
 				{
 					context.setVertexBufferAt(shader.__position.index, vertexBuffer, tempVertexPosition, FLOAT_2);
-					tempVertexPosition += 2;
 				}
+				tempVertexPosition += 2;
 
 				if (shader.__textureCoord != null)
 				{
 					context.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, tempVertexPosition, FLOAT_2);
-					tempVertexPosition += 2;
 				}
+				tempVertexPosition += 2;
 
 				if (tilemap.tileAlphaEnabled)
 				{
 					if (shader.__alpha != null)
 					{
 						context.setVertexBufferAt(shader.__alpha.index, vertexBuffer, tempVertexPosition, FLOAT_1);
-						tempVertexPosition += 1;
 					}
-				}
-
-				if (multiTextureEnabled && shader.__textureId != null)
-				{
-					context.setVertexBufferAt(shader.__textureId.index, vertexBuffer, tempVertexPosition, FLOAT_1);
 					tempVertexPosition += 1;
 				}
+
+				#if openfl_experimental_multitexture
+				if (multiTextureEnabled)
+				{
+					if (shader.__textureId != null)
+					{
+						context.setVertexBufferAt(shader.__textureId.index, vertexBuffer, tempVertexPosition, FLOAT_1);
+					}
+					tempVertexPosition += 1;
+				}
+				#end
 
 				if (tilemap.tileColorTransformEnabled)
 				{
 					if (shader.__colorMultiplier != null)
 					{
 						context.setVertexBufferAt(shader.__colorMultiplier.index, vertexBuffer, tempVertexPosition, FLOAT_4);
-						tempVertexPosition += 4;
 					}
+					tempVertexPosition += 4;
+
 					if (shader.__colorOffset != null)
 					{
-						context.setVertexBufferAt(shader.__colorOffset.index, vertexBuffer, tempVertexPosition + 4, FLOAT_4);
-						tempVertexPosition += 4;
+						context.setVertexBufferAt(shader.__colorOffset.index, vertexBuffer, tempVertexPosition, FLOAT_4);
 					}
+					tempVertexPosition += 4;
 				}
 
 				context.drawTriangles(context.__quadIndexBuffer, 0, length * 2);
@@ -595,6 +632,7 @@ class Context3DTilemap
 
 			shader = tile.shader != null ? tile.shader : defaultShader;
 
+			#if openfl_experimental_multitexture
 			if (multiTextureEnabled
 				&& shader == tilemap.__worldShader
 				&& tileset != null
@@ -602,6 +640,7 @@ class Context3DTilemap
 			{
 				shader = multiTextureShaders[tileset.bitmapData.tilemapMultiTextureArrayIndex];
 			}
+			#end
 
 			if (blendModeEnabled)
 			{
@@ -632,18 +671,19 @@ class Context3DTilemap
 					if (tileData == null) continue;
 				}
 
+				#if openfl_experimental_multitexture
 				if (Std.isOfType(shader, MultiTextureShader))
 				{
-					if (currentBitmapData != null
-						&& (shader != currentShader)
+					if ((shader != currentShader)
 						|| (currentBlendMode != blendMode)
-						|| (bitmapData.tilemapMultiTextureArrayIndex != tilemapMultiTextureArrayIndex))
+						|| (bitmapData.tilemapMultiTextureArrayIndex != lastUsedMultiTextureShaderIndex))
 					{
 						flush(tilemap, renderer, currentBlendMode);
 					}
-					tilemapMultiTextureArrayIndex = bitmapData.tilemapMultiTextureArrayIndex;
+					lastUsedMultiTextureShaderIndex = bitmapData.tilemapMultiTextureArrayIndex;
 				}
 				else
+				#end
 				{
 					if ((shader != currentShader)
 						|| (bitmapData != currentBitmapData && currentBitmapData != null)
@@ -747,7 +787,7 @@ class Context3DTilemap
 
 	private static function resizeBuffer(tilemap:Tilemap, count:Int):Void
 	{
-		// numTiles = count;
+		numTiles = count;
 
 		if (tilemap.__buffer == null)
 		{
