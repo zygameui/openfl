@@ -79,10 +79,15 @@ class Context3DTilemap
 		}
 
 		#if openfl_experimental_multitexture
-		for (i in 0...tempMultiTextureShaders.length)
+		if (tempMultiTextureShaders.length > 0)
 		{
-			if (tempMultiTextureShaders[i] != null) multiTextureShaders[i] = tempMultiTextureShaders[i];
+			for (i in 0...tempMultiTextureShaders.length)
+			{
+				if (tempMultiTextureShaders[i] != null) multiTextureShaders[i] = tempMultiTextureShaders[i];
+			}
+			tempMultiTextureShaders = [];
 		}
+
 		multiTextureEnabled = tilemap.multiTextureEnabled;
 		if (multiTextureEnabled)
 		{
@@ -421,11 +426,13 @@ class Context3DTilemap
 		if (multiTextureEnabled && currentBitmapData != null && currentShader == renderer.__defaultDisplayShader)
 		{
 			var batchIndex:Int = currentBitmapData.tilemapMultiTextureArrayIndex;
-			var multiTextureShader = new MultiTextureShader(multiTextureSize);
+			if (tempMultiTextureShaders[batchIndex] != null)
+			{
+				var multiTextureShader = new MultiTextureShader(multiTextureSize);
 
-			// Using the shader in the frame where it was created will cause errors, put it in a temporary array to use it in the next frame!
-			// IDK how to fix it.
-			tempMultiTextureShaders[batchIndex] = multiTextureShader;
+				// Using the shader in the frame where it was created will cause issues, put it in a temporary array to use it in the next frame!
+				tempMultiTextureShaders[batchIndex] = multiTextureShader;
+			}
 		}
 		#end
 
