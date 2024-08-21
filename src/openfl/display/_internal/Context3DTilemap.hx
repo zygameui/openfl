@@ -151,7 +151,6 @@ class Context3DTilemap
 
 			if (tile.__length > 0)
 			{
-				numTiles++;
 				update(tilemap, cast tile, bitmapData);
 			}
 			else
@@ -208,10 +207,11 @@ class Context3DTilemap
 		var tileWidth, tileHeight, uvX, uvY, uvHeight, uvWidth, vertexOffset;
 		var x, y, x2, y2, x3, y3, x4, y4;
 
+		// TODO: Why do compute this in every recursive?
 		var alphaPosition = 4;
 		#if openfl_experimental_multitexture
-		var textureIdPosition = alphaPosition + (tilemap.tileAlphaEnabled ? 1 : 0);
-		var ctPosition = textureIdPosition + (textureIdPosition != alphaPosition ? 1 : 0);
+		var textureIdPosition = alphaPosition + ((tilemap.tileAlphaEnabled && tilemap.multiTextureEnabled) ? 1 : 0);
+		var ctPosition = textureIdPosition + ((tilemap.tileAlphaEnabled && tilemap.multiTextureEnabled) ? 1 : 0);
 		#else
 		var ctPosition = tilemap.tileAlphaEnabled ? 5 : 4;
 		#end
@@ -787,7 +787,7 @@ class Context3DTilemap
 
 	private static function resizeBuffer(tilemap:Tilemap, count:Int):Void
 	{
-		numTiles = count;
+		// numTiles = count;
 
 		if (tilemap.__buffer == null)
 		{
