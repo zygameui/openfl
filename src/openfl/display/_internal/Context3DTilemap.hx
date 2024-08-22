@@ -60,8 +60,8 @@ class Context3DTilemap
 	private static var vertexDataPosition:Int;
 
 	#if openfl_experimental_multitexture
+	private static var multiTextureSize:Int = -1;
 	private static var multiTextureEnabled:Bool = false;
-	private static var multiTextureSize:Null<Int>;
 	private static var lastMultiTextureIndex:Int;
 	private static var multiTextureBitmapDataArray:Array<BitmapData>;
 	private static var tempMultiTextureShaders:Array<MultiTextureShader> = [];
@@ -91,8 +91,8 @@ class Context3DTilemap
 		multiTextureEnabled = tilemap.multiTextureEnabled;
 		if (multiTextureEnabled)
 		{
-			// if multiTexture count not available.
-			if (multiTextureSize == null)
+			// if multiTextureSize not available.
+			if (multiTextureSize == -1)
 			{
 				var maxCombinedTextureImageUnits = renderer.gl.getParameter(renderer.gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
 				var maxTextureImageUnits = renderer.gl.getParameter(renderer.gl.MAX_TEXTURE_IMAGE_UNITS);
