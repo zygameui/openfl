@@ -171,7 +171,9 @@ package openfl.media;
 	public static function stopAll():Void
 	{
 		var i = __soundChannels.length;
-		while (i-- > 0) {
+		while (i > 0)
+		{
+			i--;
 			__soundChannels[i].stop();
 		}
 	}
@@ -196,10 +198,11 @@ package openfl.media;
 	@:noCompletion private static function __unregisterSoundChannelByBuffer(buffer:lime.media.AudioBuffer):Void
 	{
 		var i = __soundChannels.length;
-		while (i-- > 0)
+		while (i > 0)
 		{
+			i--;
 			var channel = __soundChannels[i];
-			if (channel.__source.buffer == buffer)
+			if (channel.__audioSource.buffer == buffer)
 			{
 				channel.stop();
 			}

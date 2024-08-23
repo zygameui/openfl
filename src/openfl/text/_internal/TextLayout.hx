@@ -1,5 +1,6 @@
 package openfl.text._internal;
 
+#if !flash
 import haxe.io.Bytes;
 #if lime
 import lime.math.Vector2;
@@ -226,7 +227,7 @@ class TextLayout
 	@SuppressWarnings("checkstyle:Dynamic")
 	private function get_glyphs():Array< #if lime Glyph #else Dynamic #end>
 	{
-		var glyphs = [];
+		var glyphs:Array< #if lime Glyph #else Dynamic #end> = [];
 
 		for (position in positions)
 		{
@@ -505,3 +506,4 @@ class TextLayout
 		}
 	}
 }
+#end

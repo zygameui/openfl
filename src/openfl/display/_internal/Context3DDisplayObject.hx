@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display3D.Context3DClearMask;
 import openfl.display.DisplayObject;
 import openfl.display.OpenGLRenderer;
@@ -114,3 +115,4 @@ class Context3DDisplayObject
 		}
 	}
 }
+#end

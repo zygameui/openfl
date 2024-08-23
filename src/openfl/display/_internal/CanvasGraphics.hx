@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.BitmapData;
 import openfl.display.CanvasRenderer;
 import openfl.display.CapsStyle;
@@ -102,7 +103,7 @@ class CanvasGraphics
 	}
 
 	@SuppressWarnings("checkstyle:Dynamic")
-	private static function createGradientPattern(type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix,
+	private static function createGradientPattern(type:GradientType, colors:Array<Int>, alphas:Array<Float>, ratios:Array<Int>, matrix:Matrix,
 			spreadMethod:SpreadMethod, interpolationMethod:InterpolationMethod, focalPointRatio:Float):#if (js && html5) CanvasPattern #else Void #end
 	{
 		#if (js && html5)
@@ -247,6 +248,7 @@ class CanvasGraphics
 
 		if (graphics.__commands.length == 0 || bounds == null || bounds.width <= 0 || bounds.height <= 0)
 		{
+			CanvasGraphics.graphics = null;
 			return false;
 		}
 		else
@@ -334,6 +336,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -344,6 +347,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -358,6 +362,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -368,6 +373,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -456,10 +462,10 @@ class CanvasGraphics
 			// zygameui 需要释放
 			fillCommands.clear();
 			strokeCommands.clear();
-			CanvasGraphics.graphics = null;
 
 			graphics.__canvas = cacheCanvas;
 			graphics.__context = cacheContext;
+			CanvasGraphics.graphics = null;
 			return hitTest;
 		}
 		#end
@@ -1609,3 +1615,4 @@ private typedef NormalizedUVT =
 	max:Float,
 	uvt:Vector<Float>
 }
+#end

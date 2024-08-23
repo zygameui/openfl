@@ -594,8 +594,8 @@ class DisplayObjectRenderer extends EventDispatcher
 						}
 
 						var bitmap = displayObject.__cacheBitmapData;
-						var bitmap2 = null;
-						var bitmap3 = null;
+						var bitmap2:BitmapData = null;
+						var bitmap3:BitmapData = null;
 
 						// if (needSecondBitmapData) {
 						if (displayObject.__cacheBitmapData2 == null
@@ -721,8 +721,8 @@ class DisplayObjectRenderer extends EventDispatcher
 						}
 
 						var bitmap = displayObject.__cacheBitmapData;
-						var bitmap2 = null;
-						var bitmap3 = null;
+						var bitmap2:BitmapData = null;
+						var bitmap3:BitmapData = null;
 
 						if (needSecondBitmapData)
 						{

@@ -1443,6 +1443,16 @@ import js.html.CanvasRenderingContext2D;
 	public function lineStyle(thickness:Null<Float> = null, color:Int = 0, alpha:Float = 1, pixelHinting:Bool = false,
 			scaleMode:LineScaleMode = LineScaleMode.NORMAL, caps:CapsStyle = null, joints:JointStyle = null, miterLimit:Float = 3):Void
 	{
+		if (caps == null)
+		{
+			caps = CapsStyle.ROUND;
+		}
+
+		if (joints == null)
+		{
+			joints = JointStyle.ROUND;
+		}
+
 		if (thickness != null)
 		{
 			if (joints == JointStyle.MITER)
@@ -1751,7 +1761,8 @@ import js.html.CanvasRenderingContext2D;
 	@:noCompletion private function __readGraphicsData(graphicsData:Vector<IGraphicsData>):Void
 	{
 		var data = new DrawCommandReader(__commands);
-		var path = null, stroke;
+		var path:GraphicsPath = null;
+		var stroke:GraphicsStroke;
 
 		for (type in __commands.types)
 		{
@@ -1982,8 +1993,8 @@ import js.html.CanvasRenderingContext2D;
 		}
 		else
 		{
-		__worldTransform.tx = Math.fround(tx);
-		__worldTransform.ty = Math.fround(ty);
+			__worldTransform.tx = Math.fround(tx);
+			__worldTransform.ty = Math.fround(ty);
 		}
 
 		// Offset the rendering with the subpixel offset removed by Math.round above

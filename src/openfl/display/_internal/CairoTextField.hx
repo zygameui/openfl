@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.text._internal.TextEngine;
 import openfl.display.BitmapData;
 import openfl.display.CairoRenderer;
@@ -289,7 +290,7 @@ class CairoTextField
 
 					cairo.translate(0, 0);
 
-					var glyphs = [];
+					var glyphs:Array<CairoGlyph> = [];
 					var x:Float = group.offsetX + scrollX - bounds.x;
 					var y:Float = group.offsetY + group.ascent + scrollY - bounds.y;
 
@@ -358,13 +359,6 @@ class CairoTextField
 								selectionEnd = group.endIndex;
 							}
 
-							// this isn't supposed to happen, but better to
-							// avoid a crash if there's a bug somewhere
-							if (glyphs.length < selectionEnd - selectionStart)
-							{
-								selectionEnd = selectionStart + glyphs.length;
-							}
-
 							var start, end;
 
 							start = textField.getCharBoundaries(selectionStart);
@@ -392,10 +386,15 @@ class CairoTextField
 
 								// TODO: draw only once
 
-								var selectedGylphs = [];
+								var selectedGylphs:Array<CairoGlyph> = [];
 
 								selectionStart -= group.startIndex;
 								selectionEnd -= group.startIndex;
+								if (selectionEnd > glyphs.length)
+								{
+									selectionEnd = glyphs.length;
+								}
+
 								for (i in selectionStart...selectionEnd)
 									selectedGylphs.push(glyphs[i]);
 								cairo.showGlyphs(selectedGylphs);
@@ -479,3 +478,4 @@ class CairoTextField
 		CairoDisplayObject.renderDrawableMask(textField, renderer);
 	}
 }
+#end
