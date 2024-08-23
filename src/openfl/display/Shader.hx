@@ -1,5 +1,8 @@
 package openfl.display;
 
+import openfl.display3D.Context3DWrapMode;
+import openfl.display3D.Context3DMipFilter;
+import openfl.display3D.Context3DTextureFilter;
 #if !flash
 import openfl.display3D._internal.GLProgram;
 import openfl.display3D._internal.GLShader;
@@ -213,6 +216,9 @@ class Shader
 	@:noCompletion private var __bitmap:ShaderInput<BitmapData>;
 	@:noCompletion private var __colorMultiplier:ShaderParameter<Float>;
 	@:noCompletion private var __colorOffset:ShaderParameter<Float>;
+	#if openfl_experimental_multitexture
+	@:noCompletion private var __textureId:ShaderParameter<Float>;
+	#end
 	@:noCompletion private var __context:Context3D;
 	@:noCompletion private var __data:ShaderData;
 	@:noCompletion private var __glFragmentSource:String;
@@ -714,6 +720,9 @@ class Shader
 								case "openfl_Position": __position = parameter;
 								case "openfl_TextureCoord": __textureCoord = parameter;
 								case "openfl_TextureSize": __textureSize = parameter;
+								#if openfl_experimental_multitexture
+								case "openfl_TextureId": __textureId = parameter;
+								#end
 								default:
 							}
 						}
@@ -773,7 +782,11 @@ class Shader
 	@:noCompletion private function __updateGLFromBuffer(shaderBuffer:ShaderBuffer, bufferOffset:Int):Void
 	{
 		var textureCount = 0;
-		var input, inputData, inputFilter, inputMipFilter, inputWrap;
+		var input:ShaderInput<BitmapData>;
+		var inputData:BitmapData;
+		var inputFilter:Context3DTextureFilter;
+		var inputMipFilter:Context3DMipFilter;
+		var inputWrap:Context3DWrapMode;
 
 		for (i in 0...shaderBuffer.inputCount)
 		{
@@ -819,10 +832,13 @@ class Shader
 		var floatCount = shaderBuffer.paramFloatCount;
 		var paramData = shaderBuffer.paramData;
 
-		var boolRef, floatRef, intRef, hasOverride;
-		var overrideBoolValue:Array<Bool> = null,
-			overrideFloatValue:Array<Float> = null,
-			overrideIntValue:Array<Int> = null;
+		var boolRef:ShaderParameter<Bool>;
+		var floatRef:ShaderParameter<Float>;
+		var intRef:ShaderParameter<Int>;
+		var hasOverride:Bool;
+		var overrideBoolValue:Array<Bool> = null;
+		var overrideFloatValue:Array<Float> = null;
+		var overrideIntValue:Array<Int> = null;
 
 		for (i in 0...shaderBuffer.paramCount)
 		{
