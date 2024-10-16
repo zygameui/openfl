@@ -436,6 +436,7 @@ class Shader
 
 		for (input in __inputBitmapData)
 		{
+			if (input.index < 0 || input.index == null) continue;
 			gl.uniform1i(input.index, textureCount);
 			textureCount++;
 		}
