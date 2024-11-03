@@ -84,6 +84,11 @@ import lime.net.HTTPRequestHeader;
 							  `URLLoader.load()` attempts to load a
 							  SWZ file and the certificate is invalid or the
 							  digest string does not match the component.
+
+	@see [Loading external data](https://books.openfl.org/openfl-developers-guide/http-communications/loading-external-data.html)
+	@see [Web service requests](https://books.openfl.org/openfl-developers-guide/http-communications/web-service-requests.html)
+	@see `openfl.net.URLRequest`
+	@see `openfl.net.URLStream`
 **/
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
@@ -153,7 +158,7 @@ class URLLoader extends EventDispatcher
 
 		@param request A URLRequest object specifying the URL to download. If this
 					   parameter is omitted, no load operation begins. If
-					   specified, the load operation begins immediately(see the
+					   specified, the load operation begins immediately (see the
 					   `load` entry for more information).
 	**/
 	public function new(request:URLRequest = null)
@@ -207,11 +212,11 @@ class URLLoader extends EventDispatcher
 		data.
 
 		You cannot connect to commonly reserved ports. For a complete list of
-		blocked ports, see "Restricting Networking APIs" in the _ActionScript
-		3.0 Developer's Guide_.
+		blocked ports, see "Restricting Networking APIs" in the _OpenFL
+		Developer's Guide_.
 
 		 In Flash Player 10 and later, if you use a multipart Content-Type(for
-		example "multipart/form-data") that contains an upload(indicated by a
+		example "multipart/form-data") that contains an upload (indicated by a
 		"filename" parameter in a "content-disposition" header within the POST
 		body), the POST operation is subject to the security rules applied to
 		uploads:
@@ -253,8 +258,8 @@ class URLLoader extends EventDispatcher
 							  this file as local-with-networking or trusted.
 		@throws SecurityError You are trying to connect to a commonly reserved
 							  port. For a complete list of blocked ports, see
-							  "Restricting Networking APIs" in the _ActionScript
-							  3.0 Developer's Guide_.
+							  "Restricting Networking APIs" in the _OpenFL
+							  Developer's Guide_.
 		@throws TypeError     The value of the request parameter or the
 							  `URLRequest.url` property of the
 							  URLRequest object passed are `null`.
@@ -280,10 +285,12 @@ class URLLoader extends EventDispatcher
 								  Adobe platform component), but the certificate
 								  is invalid or the digest does not match the
 								  component.
+
+		@see [Loading external data](https://books.openfl.org/openfl-developers-guide/http-communications/loading-external-data.html)
 	**/
 	public function load(request:URLRequest):Void
 	{
-		#if (lime && !macro)	
+		#if (lime && !macro)
 		var openEvent:Event = new Event(Event.OPEN);
 		dispatchEvent(openEvent);
 
@@ -297,6 +304,7 @@ class URLLoader extends EventDispatcher
 				.onError(httpRequest_onError)
 				.onComplete(function(data:ByteArray):Void
 				{
+					__dispatchResponseStatus();
 					__dispatchStatus();
 					this.data = data;
 
@@ -314,8 +322,17 @@ class URLLoader extends EventDispatcher
 				.onError(httpRequest_onError)
 				.onComplete(function(data:String):Void
 				{
+					__dispatchResponseStatus();
 					__dispatchStatus();
-					this.data = data;
+
+					if (dataFormat == VARIABLES)
+					{
+						this.data = new URLVariables(data);
+					}
+					else
+					{
+						this.data = data;
+					}
 
 					var event = new Event(Event.COMPLETE);
 					dispatchEvent(event);
@@ -324,13 +341,12 @@ class URLLoader extends EventDispatcher
 		#end
 	}
 
-	@:noCompletion private function __dispatchStatus():Void
+	@:noCompletion private function __dispatchResponseStatus():Void
 	{
-		var event = new HTTPStatusEvent(HTTPStatusEvent.HTTP_STATUS, false, false, __httpRequest.responseStatus);
-		event.responseURL = __httpRequest.uri;
+		var responseStatusEvent = new HTTPStatusEvent(HTTPStatusEvent.HTTP_RESPONSE_STATUS, false, false, __httpRequest.responseStatus);
+		responseStatusEvent.responseURL = __httpRequest.uri;
 
 		var headers = new Array<URLRequestHeader>();
-
 		#if (lime && !display && !macro && !doc_gen)
 		if (__httpRequest.enableResponseHeaders && __httpRequest.responseHeaders != null)
 		{
@@ -340,9 +356,14 @@ class URLLoader extends EventDispatcher
 			}
 		}
 		#end
+		responseStatusEvent.responseHeaders = headers;
+		dispatchEvent(responseStatusEvent);
+	}
 
-		event.responseHeaders = headers;
-		dispatchEvent(event);
+	@:noCompletion private function __dispatchStatus():Void
+	{
+		var statusEvent = new HTTPStatusEvent(HTTPStatusEvent.HTTP_STATUS, false, false, __httpRequest.responseStatus);
+		dispatchEvent(statusEvent);
 	}
 
 	@:noCompletion private function __prepareRequest(httpRequest:#if (!lime || display || macro || doc_gen) Dynamic #else _IHTTPRequest #end,
@@ -389,6 +410,7 @@ class URLLoader extends EventDispatcher
 		#if (lime >= "8.0.0")
 		__httpRequest.manageCookies = request.manageCookies;
 		#end
+		__httpRequest.withCredentials = request.withCredentials;
 
 		// TODO: Better user agent?
 		var userAgent = request.userAgent;
@@ -402,8 +424,22 @@ class URLLoader extends EventDispatcher
 	// Event Handlers
 	@:noCompletion private function httpRequest_onError(error:Dynamic):Void
 	{
+		__dispatchResponseStatus();
 		__dispatchStatus();
 
+		#if (lime && !doc_gen)
+		// some targets won't allow us to cast to HTTPRequest<Dynamic>
+		if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (__httpRequest, _HTTPRequest_Bytes))
+		{
+			var bytesRequest:_HTTPRequest_Bytes<Bytes> = cast __httpRequest;
+			data = bytesRequest.responseData;
+		}
+		else if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (__httpRequest, _HTTPRequest_String))
+		{
+			var stringRequest:_HTTPRequest_String<String> = cast __httpRequest;
+			data = stringRequest.responseData;
+		}
+		#end
 		#if !hl
 		// can't compare a string against an integer in HashLink
 		if (error == 403)

@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display._internal.CairoTextField;
 import openfl.display._internal.CanvasTextField;
 import openfl.display.OpenGLRenderer;
@@ -30,8 +31,6 @@ class Context3DTextField
 	{
 		renderer.__updateCacheBitmap(textField, false);
 
-		renderer.__renderEvent(textField);
-		
 		if (textField.__cacheBitmap != null && !textField.__isCacheBitmapRender)
 		{
 			Context3DBitmap.render(textField.__cacheBitmap, renderer);
@@ -42,6 +41,7 @@ class Context3DTextField
 			Context3DDisplayObject.render(textField, renderer);
 		}
 
+		renderer.__renderEvent(textField);
 	}
 
 	public static function renderDrawableMask(textField:TextField, renderer:OpenGLRenderer):Void
@@ -60,3 +60,4 @@ class Context3DTextField
 		textField.__graphics.__hardwareDirty = false;
 	}
 }
+#end

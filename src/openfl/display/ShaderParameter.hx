@@ -185,8 +185,6 @@ import openfl.display3D.Context3D;
 
 	@:noCompletion private function __updateGL(context:Context3D, overrideValue:Array<T> = null):Void
 	{
-		// 兼容快手
-		if (index == null) return;
 		if (index < 0) return;
 
 		#if lime
@@ -423,7 +421,6 @@ import openfl.display3D.Context3D;
 
 	@:noCompletion private function __updateGLFromBuffer(context:Context3D, buffer:Float32Array, position:Int, length:Int, bufferOffset:Int):Void
 	{
-		if (index == null) return;
 		if (index < 0) return;
 
 		#if lime

@@ -70,10 +70,6 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@SuppressWarnings("checkstyle:Dynamic")
 	public var gl:#if lime WebGLRenderContext #else Dynamic #end;
 
-	@:noCompletion private static var __staticDefaultDisplayShader:DisplayObjectShader;
-	@:noCompletion private static var __staticDefaultGraphicsShader:GraphicsShader;
-	@:noCompletion private static var __staticMaskShader:Context3DMaskShader;
-
 	@:noCompletion private var __context3D:Context3D;
 	@:noCompletion private var __clipRects:Array<Rectangle>;
 	@:noCompletion private var __currentDisplayShader:Shader;
@@ -163,18 +159,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		__stencilReference = 0;
 		__tempRect = new Rectangle();
 
-		if (__staticDefaultDisplayShader == null) __staticDefaultDisplayShader = new DisplayObjectShader();
-		if (__staticDefaultGraphicsShader == null) __staticDefaultGraphicsShader = new GraphicsShader();
-		if (__staticMaskShader == null) __staticMaskShader = new Context3DMaskShader();
-
-		__defaultDisplayShader = __staticDefaultDisplayShader;
-		__defaultGraphicsShader = __staticDefaultGraphicsShader;
+		__defaultDisplayShader = new DisplayObjectShader();
+		__defaultGraphicsShader = new GraphicsShader();
 		__defaultShader = __defaultDisplayShader;
 
 		__initShader(__defaultShader);
 
 		__scrollRectMasks = new ObjectPool<Shape>(function() return new Shape());
-		__maskShader = __staticMaskShader;
+		__maskShader = new Context3DMaskShader();
 	}
 
 	/**
@@ -999,6 +991,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (clipRect != null)
 		{
+			// zygameui
 			var x:Float = Math.floor(clipRect.x);
 			var y:Float = Math.floor(clipRect.y);
 			var width:Float = (clipRect.width > 0 ? Math.ceil(clipRect.right) - x : 0);

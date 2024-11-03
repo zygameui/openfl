@@ -24,8 +24,7 @@ import openfl.Vector;
 		this.__beginFill(color, alpha);
 	}
 	@:native("beginGradientFill") @:noCompletion private function __beginGradientFill(type:GradientType, colors:Array<UInt>, alphas:Array<Float>,
-		ratios:Array<Int>, matrix:Matrix = null, ?spreadMethod:SpreadMethod, ?interpolationMethod:InterpolationMethod,
-		focalPointRatio:Null<Float> = null):Void;
+		ratios:Array<Int>, matrix:Matrix = null, ?spreadMethod:SpreadMethod, ?interpolationMethod:InterpolationMethod, focalPointRatio:Null<Float> = null):Void;
 	public inline function beginGradientFill(type:GradientType, colors:Array<UInt>, alphas:Array<Float>, ratios:Array<Int>, matrix:Matrix = null,
 			?spreadMethod:SpreadMethod, ?interpolationMethod:InterpolationMethod, focalPointRatio:Null<Float> = null):Void
 	{
@@ -34,14 +33,12 @@ import openfl.Vector;
 		FlashGraphics.bitmapFill[this] = null;
 		this.__beginGradientFill(type, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio);
 	}
-	#if flash
 	@:native("beginShaderFill") @:require(flash10) private function __beginShaderFill(shader:Shader, matrix:Matrix = null):Void;
 	@:require(flash10) public inline function beginShaderFill(shader:Shader, matrix:Matrix = null):Void
 	{
 		FlashGraphics.bitmapFill[this] = null;
 		this.__beginShaderFill(shader, matrix);
 	}
-	#end
 	public function clear():Void;
 	@:require(flash10) public function copyFrom(sourceGraphics:Graphics):Void;
 	@:require(flash11) public function cubicCurveTo(controlX1:Float, controlY1:Float, controlX2:Float, controlY2:Float, anchorX:Float, anchorY:Float):Void;
