@@ -246,16 +246,23 @@ class EventDispatcher implements IEventDispatcher
 	**/
 	public function dispatchEvent(event:Event):Bool
 	{
-		if (__targetDispatcher != null)
+		try
 		{
-			event.target = __targetDispatcher;
+			if (__targetDispatcher != null)
+			{
+				event.target = __targetDispatcher;
+			}
+			else
+			{
+				event.target = this;
+			}
+			return __dispatchEvent(event);
 		}
-		else
+		catch (e:haxe.Exception)
 		{
-			event.target = this;
+			@:privateAccess Lib.current.stage.__handleError(e);
+			return false;
 		}
-
-		return __dispatchEvent(event);
 	}
 
 	/**
