@@ -246,6 +246,11 @@ import openfl.display3D.Context3D;
 					case MATRIX4X4:
 						for (i in 0...16)
 						{
+							// zygameui 编译器优化
+							if (Math.isNaN(floatValue[i]))
+							{
+								floatValue[i] = 0;
+							}
 							__uniformMatrix[i] = floatValue[i];
 						}
 						gl.uniformMatrix4fv(index, false, __uniformMatrix);
