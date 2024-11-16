@@ -620,7 +620,26 @@ import lime.math.Vector2;
 				var scaledHeight = wantsBestResolution ? height : Std.int(height * __stage.window.scale);
 				#end
 				var vertexData = new Vector<Float>([
-					scaledWidth, scaledHeight, 0, 1, 1, 0, scaledHeight, 0, 0, 1, scaledWidth, 0, 0, 1, 0, 0, 0, 0, 0, 0.0
+					scaledWidth,
+					scaledHeight,
+					0,
+					1,
+					1,
+					0,
+					scaledHeight,
+					0,
+					0,
+					1,
+					scaledWidth,
+					0,
+					0,
+					1,
+					0,
+					0,
+					0,
+					0,
+					0,
+					0.0
 				]);
 
 				__stage3D.__vertexBuffer.uploadFromVector(vertexData, 0, 20);
@@ -2697,6 +2716,14 @@ import lime.math.Vector2;
 
 	@:noCompletion private function get_totalGPUMemory():Int
 	{
+		#if (js && webgl_memory)
+		var ext:Dynamic = gl.getExtension('GMAN_webgl_memory');
+		if (ext != null)
+		{
+			var info = ext.getMemoryInfo();
+			return info.memory.total;
+		}
+		#else
 		if (__glMemoryCurrentAvailable != -1)
 		{
 			// TODO: Return amount used by this application only
@@ -2708,6 +2735,7 @@ import lime.math.Vector2;
 				return (total - current) * 1024;
 			}
 		}
+		#end
 		return 0;
 	}
 }

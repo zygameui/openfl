@@ -117,8 +117,7 @@ import openfl.display._internal.stats.DrawCallContext;
 @:access(openfl.geom.Point)
 @:access(openfl.geom.Rectangle)
 #if !openfl_debug
-@:fileXml('tags="haxe,release"')
-@:noDebug
+@:fileXml('tags="haxe,release"') @:noDebug
 #end
 @:autoBuild(openfl.utils._internal.AssetsMacro.embedBitmap())
 class BitmapData implements IBitmapDrawable
@@ -507,14 +506,7 @@ class BitmapData implements IBitmapDrawable
 		}
 
 		var bitmapData = null;
-		var foundDifference,
-			pixel:ARGB,
-			otherPixel:ARGB,
-			comparePixel:ARGB,
-			r,
-			g,
-			b,
-			a;
+		var foundDifference, pixel:ARGB, otherPixel:ARGB, comparePixel:ARGB, r, g, b, a;
 
 		for (y in 0...height)
 		{
@@ -743,6 +735,12 @@ class BitmapData implements IBitmapDrawable
 			// 卸载内存
 			untyped getImage.buffer.__srcImage.disposeImage();
 		}
+		#end
+
+		#if (js && webgl_memory)
+		// // 主动释放context3D产生的纹理等
+		var texture = this.getTexture(zygame.core.Start.current.stage.context3D);
+		if (texture != null) texture.dispose();
 		#end
 
 		image = null;
