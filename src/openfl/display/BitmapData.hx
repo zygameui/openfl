@@ -739,8 +739,7 @@ class BitmapData implements IBitmapDrawable
 
 		#if (js && webgl_memory)
 		// // 主动释放context3D产生的纹理等
-		var texture = this.getTexture(zygame.core.Start.current.stage.context3D);
-		if (texture != null) texture.dispose();
+		if (__texture != null) __texture.dispose();
 		#end
 
 		image = null;
