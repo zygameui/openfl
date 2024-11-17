@@ -315,6 +315,10 @@ class BitmapData implements IBitmapDrawable
 		__worldTransform = new Matrix();
 		__worldColorTransform = new ColorTransform();
 		__renderable = true;
+
+		#if (js && webgl_memory)
+		js.webgl.WebGLMemory.referenceBitmapData(this);
+		#end
 	}
 
 	/**
@@ -735,11 +739,6 @@ class BitmapData implements IBitmapDrawable
 			// 卸载内存
 			untyped getImage.buffer.__srcImage.disposeImage();
 		}
-		#end
-
-		#if (js && webgl_memory)
-		// // 主动释放context3D产生的纹理等
-		if (__texture != null) __texture.dispose();
 		#end
 
 		image = null;

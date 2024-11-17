@@ -2717,12 +2717,7 @@ import lime.math.Vector2;
 	@:noCompletion private function get_totalGPUMemory():Int
 	{
 		#if (js && webgl_memory)
-		var ext:Dynamic = gl.getExtension('GMAN_webgl_memory');
-		if (ext != null)
-		{
-			var info = ext.getMemoryInfo();
-			return info.memory.total;
-		}
+		return js.webgl.WebGLMemory.getGPUMemorySize();
 		#else
 		if (__glMemoryCurrentAvailable != -1)
 		{
