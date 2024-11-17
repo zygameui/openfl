@@ -2727,7 +2727,6 @@ import lime.math.Vector2;
 				return (total - current) * 1024;
 			}
 		}
-		#end
 		return 0;
 	}
 }
