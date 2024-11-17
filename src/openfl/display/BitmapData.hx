@@ -315,10 +315,6 @@ class BitmapData implements IBitmapDrawable
 		__worldTransform = new Matrix();
 		__worldColorTransform = new ColorTransform();
 		__renderable = true;
-
-		#if (js && webgl_memory)
-		js.webgl.WebGLMemory.referenceBitmapData(this);
-		#end
 	}
 
 	/**

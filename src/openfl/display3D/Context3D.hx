@@ -2716,9 +2716,6 @@ import lime.math.Vector2;
 
 	@:noCompletion private function get_totalGPUMemory():Int
 	{
-		#if (js && webgl_memory)
-		return js.webgl.WebGLMemory.getGPUMemorySize();
-		#else
 		if (__glMemoryCurrentAvailable != -1)
 		{
 			// TODO: Return amount used by this application only
