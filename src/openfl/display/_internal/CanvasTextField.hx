@@ -69,7 +69,7 @@ class CanvasTextField
 						cursorOffsetX += textField.defaultTextFormat.indent / 2;
 						cursorOffsetX += textField.defaultTextFormat.blockIndent / 2;
 					case START:
-					// not supported?
+						// not supported?
 					case JUSTIFY:
 						cursorOffsetX += textField.defaultTextFormat.leftMargin;
 						cursorOffsetX += textField.defaultTextFormat.indent;
@@ -113,7 +113,8 @@ class CanvasTextField
 				textField.__graphics.__canvas = null;
 				textField.__graphics.__context = null;
 				#if zygameui
-				if(textField.__graphics.__bitmap != null){
+				if (textField.__graphics.__bitmap != null)
+				{
 					textField.__graphics.__bitmap.dispose();
 				}
 				textField.__graphics.__bitmap = null;
@@ -378,8 +379,12 @@ class CanvasTextField
 				}
 
 				#if zygameui
-				if(graphics.__bitmap != null)
+				if (graphics.__bitmap != null)
+				{
+					var __texture = @:privateAccess graphics.__bitmap.__texture;
+					if (__texture != null) __texture.dispose();
 					graphics.__bitmap.dispose();
+				}
 				#end
 				graphics.__bitmap = BitmapData.fromCanvas(textField.__graphics.__canvas);
 				graphics.__bitmapScale = pixelRatio;
