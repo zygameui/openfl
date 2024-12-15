@@ -9,6 +9,7 @@ import openfl.errors.IllegalOperationError;
 import openfl.errors.RangeError;
 import openfl.events.DatagramSocketDataEvent;
 import openfl.events.Event;
+import openfl.events.EventType;
 import openfl.events.EventDispatcher;
 #if !js
 import openfl.utils.ByteArray;
@@ -18,10 +19,20 @@ import sys.net.UdpSocket;
 #end
 
 /**
-	* The DatagramSocket class enables code to send and receive Universal Datagram Protocol (UDP) packets.
-	*
-	This feature is supported on all desktop operating systems, on iOS, and on Android. You can test for support at run time
-	using the DatagramSocket.isSupported property.
+	The DatagramSocket class enables code to send and receive Universal Datagram Protocol (UDP) packets.
+
+	You can test for support at run time using the `DatagramSocket.isSupported`
+	property.
+
+	_OpenFL target support:_ This feature is supported on all desktop operating
+	systems, on iOS, and on Android. This feature is not supported on the html5
+	target or other non-sys targets.
+
+	_Adobe AIR profile support:_ his feature is supported on all desktop
+	operating systems, on iOS (starting with AIR 3.8), and on Android (starting
+	with AIR 3.8). This feature is not supported on AIR for TV devices. See
+	[AIR Profile Support](https://help.adobe.com/en_US/air/build/WS144092a96ffef7cc16ddeea2126bb46b82f-8000.html)
+	for more information regarding API support across multiple profiles.
 
 	Datagram packets are individually transmitted between the source and destination. Packets can arrive in a different order
 	than they were sent. Packets lost in transmission are not retransmitted, or even detected.
@@ -147,7 +158,7 @@ class DatagramSocket extends EventDispatcher
 			switch (e)
 			{
 				case "Bind failed":
-					throw new IOError("Operation attempted on invalid socket.");
+					dispatchEvent(new Event(Event.CLOSE));
 				case "Unresolved host":
 					throw new ArgumentError("One of the parameters is invalid");
 			}
@@ -173,6 +184,8 @@ class DatagramSocket extends EventDispatcher
 		__isReceiving = false;
 		bound = false;
 		Lib.current.removeEventListener(Event.ENTER_FRAME, __onFrameUpdate);
+
+		dispatchEvent(new Event(Event.CLOSE));
 	}
 
 	/**
@@ -309,17 +322,19 @@ class DatagramSocket extends EventDispatcher
 		}
 	}
 
-	override public function addEventListener(type:String, listener:Dynamic->Void, useCapture:Bool = false, priority:Int = 0,
+	override public function addEventListener<T>(type:EventType<T>, listener:Dynamic->Void, useCapture:Bool = false, priority:Int = 0,
 			useWeakReference:Bool = false):Void
 	{
+		var dataEvent:String = DatagramSocketDataEvent.DATA;
 		super.addEventListener(type, listener, useCapture, priority, useWeakReference);
-		if (type == DatagramSocketDataEvent.DATA)
+
+		if (type == dataEvent && !this.hasEventListener(dataEvent))
 		{
 			Lib.current.addEventListener(Event.ENTER_FRAME, __onFrameUpdate);
 		}
 	}
 
-	override public function removeEventListener(type:String, listener:Dynamic->Void, useCapture:Bool = false):Void
+	override public function removeEventListener<T>(type:EventType<T>, listener:Dynamic->Void, useCapture:Bool = false):Void
 	{
 		super.removeEventListener(type, listener, useCapture);
 		if (type == DatagramSocketDataEvent.DATA)
@@ -373,11 +388,24 @@ class DatagramSocket extends EventDispatcher
 
 	@:noCompletion private function get_localAddress():String
 	{
-		if (bound)
+		#if neko
+		try
 		{
-			return __udpSocket.host().host.toString();
+			return __udpSocket.host().host.host;
 		}
-		return null;
+		catch (e:Dynamic)
+		{
+			return null;
+		}
+		#else
+		var host = __udpSocket.host();
+
+		if (host == null)
+		{
+			return null;
+		}
+		return host.host.host;
+		#end
 	}
 
 	@:noCompletion private function get_localPort():Int
@@ -391,11 +419,24 @@ class DatagramSocket extends EventDispatcher
 
 	@:noCompletion private function get_remoteAddress():String
 	{
-		if (connected)
+		#if neko
+		try
 		{
-			return __udpSocket.peer().host.toString();
+			return __udpSocket.peer().host.host;
 		}
-		return null;
+		catch (e:Dynamic)
+		{
+			return null;
+		}
+		#else
+		var host = __udpSocket.peer();
+
+		if (host == null)
+		{
+			return "";
+		}
+		return host.host.host;
+		#end
 	}
 
 	@:noCompletion private function get_remotePort():Int

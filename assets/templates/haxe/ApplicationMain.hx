@@ -19,11 +19,8 @@ class ApplicationMain
 		lime.system.System.__registerEntryPoint("::APP_FILE::", create);
 
 		#if (js && html5)
-		// TODO 在使用单元测试的时候，不想启动两个embed
-		#if !zygameui
-		#if (munit || utest)
+		#if (munit || (utest && openfl_enable_utest_legacy_mode))
 		lime.system.System.embed("::APP_FILE::", null, ::WIN_WIDTH::, ::WIN_HEIGHT::);
-		#end
 		#end
 		#else
 		create(null);
@@ -107,7 +104,9 @@ class ApplicationMain
 
 		app.createWindow(attributes);
 		::end::
-		#elseif !air
+		#elseif air
+		app.window.title = "::meta.title::";
+		#else
 		app.window.context.attributes.background = ::WIN_BACKGROUND::;
 		app.window.frameRate = ::WIN_FPS::;
 		#end

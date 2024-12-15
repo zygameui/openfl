@@ -17,7 +17,7 @@ import js.Browser;
 
 	You can create Timer objects to run once or repeat at specified
 	intervals to execute code on a schedule. Depending on the SWF file's
-	framerate or the runtime environment(available memory and other factors),
+	framerate or the runtime environment (available memory and other factors),
 	the runtime may dispatch events at slightly offset intervals. For example,
 	if a SWF file is set to play at 10 frames per second(fps), which is 100
 	millisecond intervals, but your timer is set to fire an event at 80
@@ -34,6 +34,8 @@ import js.Browser;
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
+@:access(openfl.display.Stage)
+@:access(openfl.events.TimerEvent)
 class Timer extends EventDispatcher
 {
 	/**
@@ -216,6 +218,15 @@ class Timer extends EventDispatcher
 		return __repeatCount = v;
 	}
 
+	@:noCompletion private function __handleUpdateAfterEvent():Void
+	{
+		if (Lib.current == null || Lib.current.stage == null)
+		{
+			return;
+		}
+		Lib.current.stage.__renderAfterEvent();
+	}
+
 	// Event Handlers
 	@:noCompletion private function timer_onTimer():Void
 	{
@@ -224,12 +235,27 @@ class Timer extends EventDispatcher
 		if (__repeatCount > 0 && currentCount >= __repeatCount)
 		{
 			stop();
-			dispatchEvent(new TimerEvent(TimerEvent.TIMER));
-			dispatchEvent(new TimerEvent(TimerEvent.TIMER_COMPLETE));
+			var event = new TimerEvent(TimerEvent.TIMER);
+			dispatchEvent(event);
+			if (event.__updateAfterEventFlag)
+			{
+				__handleUpdateAfterEvent();
+			}
+			event = new TimerEvent(TimerEvent.TIMER_COMPLETE);
+			dispatchEvent(event);
+			if (event.__updateAfterEventFlag)
+			{
+				__handleUpdateAfterEvent();
+			}
 		}
 		else
 		{
-			dispatchEvent(new TimerEvent(TimerEvent.TIMER));
+			var event = new TimerEvent(TimerEvent.TIMER);
+			dispatchEvent(event);
+			if (event.__updateAfterEventFlag)
+			{
+				__handleUpdateAfterEvent();
+			}
 		}
 	}
 }

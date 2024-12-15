@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.DisplayObject;
 import openfl.display.OpenGLRenderer;
 #if gl_stats
@@ -42,35 +43,26 @@ class Context3DShape
 				var context = renderer.__context3D;
 				var scale9Grid = shape.__worldScale9Grid;
 
-				var shader = renderer.__initDisplayShader(cast shape.__worldShader);
-				renderer.setShader(shader);
-				renderer.applyBitmapData(graphics.__bitmap, true);
+				//trace("RENDER SHAPE");
+				//renderer.begin();
 
-				var matrix = Matrix.__pool.get();
-				matrix.scale(1 / graphics.__bitmapScale, 1 / graphics.__bitmapScale);
-				matrix.concat(graphics.__worldTransform);
+				var matrix = new Matrix();
+                matrix.scale(1 / graphics.__bitmapScale, 1 / graphics.__bitmapScale);
+                matrix.concat(graphics.__worldTransform);
 
-				renderer.applyMatrix(renderer.__getMatrix(matrix, AUTO));
+				var bitmap = new Bitmap(graphics.__bitmap);
+				bitmap.pixelSnapping = PixelSnapping.AUTO;
+				bitmap.__scrollRect = shape.__scrollRect;
+				bitmap.__renderTransform = matrix;
+				bitmap.__worldTransform = graphics.__worldTransform;
+				bitmap.__worldAlpha = shape.__worldAlpha;
+				bitmap.__worldColorTransform = shape.__worldColorTransform;
+				bitmap.__worldShader = shape.__worldShader;
+				bitmap.__worldBlendMode = shape.__worldBlendMode;
+				bitmap.__renderable = shape.__renderable;
 
-				Matrix.__pool.release(matrix);
-
-				renderer.applyAlpha(shape.__worldAlpha);
-				renderer.applyColorTransform(shape.__worldColorTransform);
-				renderer.updateShader();
-
-				// TODO: scale9Grid
-
-				var vertexBuffer = graphics.__bitmap.getVertexBuffer(context /*, scale9Grid, shape*/);
-				if (shader.__position != null) context.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_3);
-				if (shader.__textureCoord != null) context.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2);
-				var indexBuffer = graphics.__bitmap.getIndexBuffer(context /*, scale9Grid*/);
-				context.drawTriangles(indexBuffer);
-
-				#if gl_stats
-				Context3DStats.incrementDrawCall(DrawCallContext.STAGE);
-				#end
-
-				renderer.__clearShader();
+				Context3DBitmap.render(bitmap, renderer);
+				//renderer.begin();
 			}
 
 			// renderer.filterManager.popObject (shape);
@@ -113,3 +105,4 @@ class Context3DShape
 		}
 	}
 }
+#end

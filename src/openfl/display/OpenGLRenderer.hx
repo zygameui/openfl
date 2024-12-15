@@ -18,6 +18,10 @@ import openfl.display3D.Context3D;
 import openfl.geom.ColorTransform;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
+import openfl.display3D.VertexBuffer3D;
+import openfl.display3D.IndexBuffer3D;
+import openfl.display.Bitmap;
+import openfl.utils._internal.Float32Array;
 #if lime
 import lime.graphics.opengl.ext.KHR_debug;
 import lime.graphics.WebGLRenderContext;
@@ -70,10 +74,6 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@SuppressWarnings("checkstyle:Dynamic")
 	public var gl:#if lime WebGLRenderContext #else Dynamic #end;
 
-	@:noCompletion private static var __staticDefaultDisplayShader:DisplayObjectShader;
-	@:noCompletion private static var __staticDefaultGraphicsShader:GraphicsShader;
-	@:noCompletion private static var __staticMaskShader:Context3DMaskShader;
-
 	@:noCompletion private var __context3D:Context3D;
 	@:noCompletion private var __clipRects:Array<Rectangle>;
 	@:noCompletion private var __currentDisplayShader:Shader;
@@ -106,6 +106,9 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@:noCompletion private var __upscaled:Bool;
 	@:noCompletion private var __values:Array<Float>;
 	@:noCompletion private var __width:Int;
+    #if openfl_experimental_multitexture
+    @:noCompletion private var __bitmapRenderPool:Array<Bitmap> = [];
+    #end
 
 	@:noCompletion private function new(context:Context3D, defaultRenderTarget:BitmapData = null)
 	{
@@ -163,18 +166,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		__stencilReference = 0;
 		__tempRect = new Rectangle();
 
-		if (__staticDefaultDisplayShader == null) __staticDefaultDisplayShader = new DisplayObjectShader();
-		if (__staticDefaultGraphicsShader == null) __staticDefaultGraphicsShader = new GraphicsShader();
-		if (__staticMaskShader == null) __staticMaskShader = new Context3DMaskShader();
-
-		__defaultDisplayShader = __staticDefaultDisplayShader;
-		__defaultGraphicsShader = __staticDefaultGraphicsShader;
+		__defaultDisplayShader = new DisplayObjectShader();
+		__defaultGraphicsShader = new GraphicsShader();
 		__defaultShader = __defaultDisplayShader;
 
 		__initShader(__defaultShader);
 
 		__scrollRectMasks = new ObjectPool<Shape>(function() return new Shape());
-		__maskShader = __staticMaskShader;
+		__maskShader = new Context3DMaskShader();
 	}
 
 	/**
@@ -316,6 +315,24 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			if (__currentShader.__matrix != null) __currentShader.__matrix.value = matrix;
 		}
 	}
+
+	#if openfl_experimental_multitexture
+	/**
+		Applies render texture id to the active shader
+	**/
+	public function applyTextureId(id:Float):Void
+	{
+		if (__currentShaderBuffer != null)
+		{
+			__currentShaderBuffer.addFloatOverride("openfl_TextureId", [id]);
+		}			if (__currentShader.__hasColorTransform != null) __currentShader.__hasColorTransform.value = null;
+
+    else if (__currentShader != null)
+		{
+			if (__currentShader.__textureId != null) __currentShader.__textureId.value = [id];
+		}
+	}
+	#end
 
 	/**
 		Converts an OpenFL two-dimensional matrix to a compatible 3D matrix for use with
@@ -484,6 +501,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			if (__currentShader.__hasColorTransform != null) __currentShader.__hasColorTransform.value = null;
 			if (__currentShader.__position != null) __currentShader.__position.value = null;
 			if (__currentShader.__matrix != null) __currentShader.__matrix.value = null;
+			#if openfl_experimental_multitexture
+			if (__currentShader.__textureId != null) __currentShader.__textureId.value = null;
+            if (__currentShader.__multiTextureColorTransform != null) __currentShader.__multiTextureColorTransform.value = null;
+            if (__currentShader.__matrixRow0 != null) __currentShader.__matrixRow0.value = null;
+            if (__currentShader.__matrixRow1 != null) __currentShader.__matrixRow1.value = null;
+            if (__currentShader.__matrixRow2 != null) __currentShader.__matrixRow2.value = null;
+			if (__currentShader.__matrixRow3 != null) __currentShader.__matrixRow3.value = null;
+			#end
 			__currentShader.__clearUseArray();
 		}
 	}
@@ -553,6 +578,272 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		return __defaultShader;
 	}
 
+	private #if !openfl_experimental_multitexture inline #end function begin():Void {
+        #if openfl_experimental_multitexture
+		if(__bitmapRenderPool.length > 0) {
+			var glBlendMode = this.__blendMode;
+			__setBlendMode(NORMAL);
+
+			//trace(bitmapRenderPool.length);
+			if(__bitmapRenderPool.length == 1)
+			{
+				@:privateAccess Context3DBitmap.flush(__bitmapRenderPool.shift(), this);
+			} else {
+				var maxCombinedTextureImageUnits:Int = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+				var maxTextureImageUnits:Int = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+				var supportedMultiTextureUnits = Math.floor(Math.min(maxCombinedTextureImageUnits, maxTextureImageUnits));
+
+				var multiTextureBitmapDataArray:Array<BitmapData> = [];
+				for (i in 0...__bitmapRenderPool.length) {
+					var bitmap:Bitmap = __bitmapRenderPool[i];
+
+					var multiTextureAssetLength:Int = multiTextureBitmapDataArray.length;
+					var multiTextureArrayIndex = Math.floor(multiTextureAssetLength / supportedMultiTextureUnits);
+					var multiTextureBitmapDataArrayIndex:Int = multiTextureBitmapDataArray.indexOf(bitmap.bitmapData, multiTextureArrayIndex * supportedMultiTextureUnits);
+					if(multiTextureBitmapDataArrayIndex == -1)
+					{
+						multiTextureBitmapDataArrayIndex = multiTextureAssetLength;
+						multiTextureBitmapDataArray.push(bitmap.bitmapData);
+					}else{
+						// If the bitmapData is already in the group, find the index of it.
+						multiTextureArrayIndex = Math.floor(multiTextureBitmapDataArrayIndex / supportedMultiTextureUnits);
+					}
+
+					bitmap.multiTextureIndex = multiTextureArrayIndex;
+					bitmap.multiTextureId =  multiTextureBitmapDataArrayIndex % supportedMultiTextureUnits;
+				}
+
+
+				var localMultiTextureArray:Array<Bitmap> = [];
+				var lastMultiTextureIndex:Int = 0;
+				var multiTextureShader:MultiTextureShader = new MultiTextureShader(supportedMultiTextureUnits);
+
+				for (i in 0...__bitmapRenderPool.length) {
+
+					var bitmap:Bitmap = __bitmapRenderPool[i];
+					var nextMultiTextureIndex:Int = bitmap.multiTextureIndex;
+
+					var nextBitmap:Bitmap = __bitmapRenderPool[i + 1];
+					if(nextBitmap != null)
+					{
+						nextMultiTextureIndex = nextBitmap.multiTextureIndex;
+					}
+
+					var bitmapDataInput:ShaderInput<BitmapData> = cast Reflect.getProperty(@:privateAccess multiTextureShader.__data, "uSampler" + bitmap.multiTextureId);
+					bitmapDataInput.input = bitmap.bitmapData;
+					bitmapDataInput.filter = LINEAR;
+
+					localMultiTextureArray.push(bitmap);
+
+					// if last loop element
+					if(i == __bitmapRenderPool.length - 1 || lastMultiTextureIndex != nextMultiTextureIndex)
+					{
+						var vertexBuffer:VertexBuffer3D = getVertexBuffer(localMultiTextureArray, __context3D);
+						@:privateAccess Context3DBitmap.flush(localMultiTextureArray[0], this, vertexBuffer, multiTextureShader, localMultiTextureArray, 0);
+
+						//vertexBuffer.dispose();
+						lastMultiTextureIndex = nextMultiTextureIndex;
+
+						localMultiTextureArray = [];
+					}
+				}
+			}
+
+			__setBlendMode(glBlendMode);
+
+            __bitmapRenderPool = [];
+		}
+        #end
+	}
+
+	@:dox(hide) public function getVertexBuffer(bitmapDataArray:Array<Bitmap>, context:Context3D):VertexBuffer3D
+	{
+		var gl = context.gl;
+
+		// TODO: Support for UVs other than scale-9 grid?
+		// TODO: Better way of handling object transform?
+
+		var __vertexBuffer:VertexBuffer3D = null;
+
+		if (true)
+		{
+			var uvWidth = 1;
+			var uvHeight = 1;
+
+			#if lime
+				var __vertexBufferContext = context.__context;
+				var __vertexBufferData:Float32Array = null;
+				if (__vertexBuffer == null)
+				{
+					var vertexDataPosition = 0;
+					var dataPerVertex = 33;
+
+					__vertexBufferData = new Float32Array(bitmapDataArray.length * (dataPerVertex * 4));
+
+
+					for(bitmap in bitmapDataArray)
+					{
+						var index = vertexDataPosition;
+						var bitmapData:BitmapData = @:privateAccess bitmap.__bitmapData;
+
+						__vertexBufferData[index + 0] = bitmapData.width;
+						__vertexBufferData[index + 1] = bitmapData.height;
+						__vertexBufferData[index + 3] = uvWidth;
+						__vertexBufferData[index + 4] = uvHeight;
+						__vertexBufferData[index + 5] = bitmap.multiTextureId;
+						__vertexBufferData[index + 6] = bitmap.__worldAlpha;
+
+						var colorTransform:ColorTransform = @:privateAccess bitmap.__worldColorTransform;
+						var hasColorTransform = !colorTransform.__isDefault(true);
+						var hasColorTransformValue = hasColorTransform ? 1 : 0;
+						__vertexBufferData[index + 7] = hasColorTransformValue;
+						if(hasColorTransform)
+						{
+							__vertexBufferData[index + 8] = colorTransform.redMultiplier;
+							__vertexBufferData[index + 9] = colorTransform.greenMultiplier;
+							__vertexBufferData[index + 10] = colorTransform.blueMultiplier;
+							__vertexBufferData[index + 11] = colorTransform.alphaMultiplier;
+							__vertexBufferData[index + 12] = colorTransform.redOffset;
+							__vertexBufferData[index + 13] = colorTransform.greenOffset;
+							__vertexBufferData[index + 14] = colorTransform.blueOffset;
+							__vertexBufferData[index + 15] = colorTransform.alphaOffset;
+						}
+
+						__vertexBufferData[index + dataPerVertex + 1] = bitmapData.height;
+						__vertexBufferData[index + dataPerVertex + 4] = uvHeight;
+						__vertexBufferData[index + dataPerVertex * 2] = bitmapData.width;
+						__vertexBufferData[index + dataPerVertex * 2 + 3] = uvWidth;
+
+						var matrixData:Array<Float> = __getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping);
+						for(v in 0...4)
+						{
+							__vertexBufferData[index + dataPerVertex * v + 5] = bitmap.multiTextureId;
+							__vertexBufferData[index + dataPerVertex * v + 6] = bitmap.__worldAlpha;
+							__vertexBufferData[index + dataPerVertex * v + 7] = hasColorTransformValue;
+							if(hasColorTransform)
+							{
+								__vertexBufferData[index + dataPerVertex * v + 8] = colorTransform.redMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 9] = colorTransform.greenMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 10] = colorTransform.blueMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 11] = colorTransform.alphaMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 12] = colorTransform.redOffset;
+								__vertexBufferData[index + dataPerVertex * v + 13] = colorTransform.greenOffset;
+								__vertexBufferData[index + dataPerVertex * v + 14] = colorTransform.blueOffset;
+								__vertexBufferData[index + dataPerVertex * v + 15] = colorTransform.alphaOffset;
+							}
+							// Use 16 instead of matrixData.length to help compiler optimization
+							for(i in 0...16)
+							{
+								__vertexBufferData[index + 16 + i] = matrixData[i];
+								__vertexBufferData[index + dataPerVertex * v + 16 + i] = matrixData[i];
+							}
+						}
+
+						vertexDataPosition += dataPerVertex * 4;
+					}
+
+					__vertexBuffer = context.createVertexBuffer(3, dataPerVertex);
+				}
+
+				// for (i in 0...4) {
+
+				// 	__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 5] = alpha;
+
+				// 	if (colorTransform != null) {
+
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 6] = colorTransform.redMultiplier;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 7] = colorTransform.greenMultiplier;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 8] = colorTransform.blueMultiplier;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 9] = colorTransform.alphaMultiplier;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 10] = colorTransform.redOffset / 255;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 11] = colorTransform.greenOffset / 255;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 12] = colorTransform.blueOffset / 255;
+				// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 13] = colorTransform.alphaOffset / 255;
+
+				// 	}
+
+				// }
+
+				// __vertexBufferAlpha = alpha;
+				// __vertexBufferColorTransform = colorTransform != null ? colorTransform.__clone () : null;
+
+				__vertexBuffer.uploadFromTypedArray(__vertexBufferData);
+				#end
+		}
+		else
+		{
+			// var dirty = false;
+
+			// if (__vertexBufferAlpha != alpha) {
+
+			// 	dirty = true;
+
+			// 	for (i in 0...4) {
+
+			// 		__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 5] = alpha;
+
+			// 	}
+
+			// 	__vertexBufferAlpha = alpha;
+
+			// }
+
+			// if ((__vertexBufferColorTransform == null && colorTransform != null) || (__vertexBufferColorTransform != null && !__vertexBufferColorTransform.__equals (colorTransform))) {
+
+			// 	dirty = true;
+
+			// 	if (colorTransform != null) {
+
+			// 		if (__vertexBufferColorTransform == null) {
+			// 			__vertexBufferColorTransform = colorTransform.__clone ();
+			// 		} else {
+			// 			__vertexBufferColorTransform.__copyFrom (colorTransform);
+			// 		}
+
+			// 		for (i in 0...4) {
+
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 6] = colorTransform.redMultiplier;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 11] = colorTransform.greenMultiplier;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 16] = colorTransform.blueMultiplier;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 21] = colorTransform.alphaMultiplier;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 22] = colorTransform.redOffset / 255;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 23] = colorTransform.greenOffset / 255;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 24] = colorTransform.blueOffset / 255;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 25] = colorTransform.alphaOffset / 255;
+
+			// 		}
+
+			// 	} else {
+
+			// 		for (i in 0...4) {
+
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 6] = 1;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 11] = 1;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 16] = 1;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 21] = 1;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 22] = 0;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 23] = 0;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 24] = 0;
+			// 			__vertexBufferData[VERTEX_BUFFER_STRIDE * i + 25] = 0;
+
+			// 		}
+
+			// 	}
+
+			// }
+
+			// context.__bindGLArrayBuffer (__vertexBuffer);
+
+			// if (dirty) {
+
+			// 	gl.bufferData (gl.ARRAY_BUFFER, __vertexBufferData.byteLength, __vertexBufferData, gl.STATIC_DRAW);
+
+			// }
+		}
+
+		return __vertexBuffer;
+	}
+
 	@:noCompletion private function __initDisplayShader(shader:Shader):Shader
 	{
 		if (shader != null)
@@ -605,6 +896,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (__stencilReference == 0) return;
 
+		begin();
+
 		var mask = __maskObjects.pop();
 
 		if (__stencilReference > 1)
@@ -653,6 +946,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (__numClipRects > 0)
 		{
+			begin();
+
 			__numClipRects--;
 
 			if (__numClipRects > 0)
@@ -668,6 +963,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 	@:noCompletion private override function __pushMask(mask:DisplayObject):Void
 	{
+		begin();
+
 		if (__stencilReference == 0)
 		{
 			__context3D.clear(0, 0, 0, 0, 0, 0, Context3DClearMask.STENCIL);
@@ -714,6 +1011,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 	@:noCompletion private override function __pushMaskRect(rect:Rectangle, transform:Matrix):Void
 	{
+		begin();
 		// TODO: Handle rotation?
 
 		if (__numClipRects == __clipRects.length)
@@ -752,6 +1050,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 	@:noCompletion private override function __render(object:IBitmapDrawable):Void
 	{
+		begin();
+
 		__context3D.setColorMask(true, true, true, true);
 		__context3D.setCulling(NONE);
 		__context3D.setDepthTest(false, ALWAYS);
@@ -864,6 +1164,11 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (object == null) return;
 
+		if(object.__drawableType != BITMAP)
+		{
+			//this.begin();
+		}
+
 		switch (object.__drawableType)
 		{
 			case BITMAP_DATA:
@@ -889,6 +1194,11 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@:noCompletion private function __renderDrawableMask(object:IBitmapDrawable):Void
 	{
 		if (object == null) return;
+
+		if(object.__drawableType != BITMAP && object.__drawableType != SHAPE)
+		{
+			//this.begin();
+		}
 
 		switch (object.__drawableType)
 		{
@@ -916,6 +1226,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (source == null || shader == null) return;
 		if (__defaultRenderTarget == null) return;
+
+		begin();
 
 		var cacheRTT = __context3D.__state.renderToTexture;
 		var cacheRTTDepthStencil = __context3D.__state.renderToTextureDepthStencil;
@@ -999,10 +1311,10 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (clipRect != null)
 		{
-			var x:Float = Math.floor(clipRect.x);
-			var y:Float = Math.floor(clipRect.y);
-			var width:Float = (clipRect.width > 0 ? Math.ceil(clipRect.right) - x : 0);
-			var height:Float = (clipRect.height > 0 ? Math.ceil(clipRect.bottom) - y : 0);
+			var x = Math.ffloor(clipRect.x);
+			var y = Math.ffloor(clipRect.y);
+			var width = (clipRect.width > 0 ? Math.fceil(clipRect.right) - x : 0);
+			var height = (clipRect.height > 0 ? Math.fceil(clipRect.bottom) - y : 0);
 			#if !openfl_dpi_aware
 			if (__context3D.__backBufferWantsBestResolution)
 			{
@@ -1018,14 +1330,6 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			if (height < 0) height = 0;
 
 			// __scissorRectangle.setTo (x, __flipped ? __height - y - height : y, width, height);
-			// zygameui: 这里兼容微信IOS旧机型发生渲染错误的问题
-			var stageWidth = Lib.current.stage.stageWidth;
-			var stageHeight = Lib.current.stage.stageHeight;
-			if (x >= stageWidth || y >= stageHeight || x + width <= 0 || y + height <= 0)
-			{
-				x = y = 0;
-				width = height = 1;
-			}
 			__scissorRectangle.setTo(x, y, width, height);
 			__context3D.setScissorRectangle(__scissorRectangle);
 		}

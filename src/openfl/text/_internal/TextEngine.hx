@@ -1,5 +1,6 @@
 package openfl.text._internal;
 
+#if !flash
 import haxe.Timer;
 import openfl.display3D._internal.GLTexture;
 import openfl.utils._internal.Log;
@@ -94,7 +95,9 @@ class TextEngine
 	@:noCompletion private var __measuredWidth:Int;
 	@:noCompletion private var __restrictRegexp:EReg;
 	@:noCompletion private var __selectionStart:Int;
+	#if !openfl_disable_text_measurement_cache
 	@:noCompletion private var __shapeCache:ShapeCache;
+	#end
 	@:noCompletion private var __showCursor:Bool;
 	@:noCompletion private var __textFormat:TextFormat;
 	@:noCompletion private var __textLayout:TextLayout;
@@ -109,7 +112,9 @@ class TextEngine
 
 	public function new(textField:TextField)
 	{
+		#if !openfl_disable_text_measurement_cache
 		__shapeCache = new ShapeCache();
+		#end
 		this.textField = textField;
 
 		width = 100;
@@ -136,16 +141,6 @@ class TextEngine
 		scrollV = 1;
 		wordWrap = false;
 
-		#if zygameui
-		lineAscents = new Vector(0, false);
-		lineBreaks = new Vector(0, false);
-		lineDescents = new Vector(0, false);
-		lineLeadings = new Vector(0, false);
-		lineHeights = new Vector(0, false);
-		lineWidths = new Vector(0, false);
-		layoutGroups = new Vector(0, false);
-		textFormatRanges = new Vector(0, false);
-		#else
 		lineAscents = new Vector();
 		lineBreaks = new Vector();
 		lineDescents = new Vector();
@@ -154,7 +149,6 @@ class TextEngine
 		lineWidths = new Vector();
 		layoutGroups = new Vector();
 		textFormatRanges = new Vector();
-		#end
 
 		#if (js && html5)
 		if (__context == null)
@@ -300,7 +294,9 @@ class TextEngine
 		var textHeight = textHeight * 1.185; // measurement isn't always accurate, add padding
 		#end
 
-		textBounds.setTo(Math.max(x - 2, 0), Math.max(y - 2, 0), Math.min(textWidth + 4, bounds.width + 4), Math.min(textHeight + 4, bounds.height + 4));
+		// don't add 4 to bounds.width and bounds.height here because the + 4
+		// is already included from a previous calculation
+		textBounds.setTo(Math.max(x - 2, 0), Math.max(y - 2, 0), Math.min(textWidth + 4, bounds.width), Math.min(textHeight + 4, bounds.height));
 	}
 
 	private static function getDefaultFont(name:String, bold:Bool, italic:Bool):Font
@@ -314,7 +310,7 @@ class TextEngine
 
 			function processFontList(list:Array<String>):Font
 			{
-				var font = null;
+				var font:Font = null;
 				for (path in list)
 				{
 					font = findFont(path);
@@ -535,8 +531,7 @@ class TextEngine
 		#if (js && html5)
 		return findFontVariant(format);
 		#elseif lime_cffi
-		var instance = null;
-		var fontList = null;
+		var instance:Font = null;
 
 		if (format != null && format.font != null)
 		{
@@ -685,7 +680,10 @@ class TextEngine
 		if (textHeight == 0 && textField != null && type == INPUT)
 		{
 			var currentFormat = textField.__textFormat;
-			var ascent, descent, leading, heightValue;
+			var ascent:Float;
+			var descent:Float;
+			var leading:Int;
+			var heightValue:Int;
 
 			var font = getFontInstance(currentFormat);
 
@@ -773,7 +771,7 @@ class TextEngine
 
 		var rangeIndex = -1;
 		var formatRange:TextFormatRange = null;
-		var font = null;
+		var font:Font = null;
 
 		var currentFormat = TextField.__defaultTextFormat.clone();
 
@@ -791,7 +789,7 @@ class TextEngine
 		var rightMargin = 0;
 		var firstLineOfParagraph = true;
 
-		var tabStops = null; // TODO: maybe there's a better init value (not sure what this actually is)
+		// var tabStops = null; // TODO: maybe there's a better init value (not sure what this actually is)
 
 		var layoutGroup:TextLayoutGroup = null, positions = null;
 		var widthValue = 0.0, heightValue = 0, maxHeightValue = 0;
@@ -823,7 +821,7 @@ class TextEngine
 			#if (js && html5)
 			function html5Positions():Array<Float>
 			{
-				var positions = [];
+				var positions:Array<Float> = [];
 
 				if (__useIntAdvances == null)
 				{
@@ -835,7 +833,7 @@ class TextEngine
 					// slower, but more accurate if browser returns Int measurements
 
 					var previousWidth = 0.0;
-					var width;
+					var width:Float;
 
 					for (i in startIndex...endIndex)
 					{
@@ -851,7 +849,7 @@ class TextEngine
 				{
 					for (i in startIndex...endIndex)
 					{
-						var advance;
+						var advance:Float;
 
 						if (i < text.length - 1)
 						{
@@ -879,7 +877,11 @@ class TextEngine
 				return html5Positions();
 			}
 
+			#if openfl_disable_text_measurement_cache
+			return html5Positions();
+			#else
 			return __shapeCache.cache(formatRange, html5Positions, text.substring(startIndex, endIndex));
+			#end
 			#else
 			if (__textLayout == null)
 			{
@@ -910,7 +912,11 @@ class TextEngine
 				return __textLayout.positions;
 			}
 
+			#if openfl_disable_text_measurement_cache
+			return __textLayout.positions;
+			#else
 			return __shapeCache.cache(formatRange, __textLayout);
+			#end
 			#end
 		} #if !js inline #end function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
 
@@ -1112,7 +1118,7 @@ class TextEngine
 					{
 						if (!nextFormatRange())
 						{
-							Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and contact Joshua Granick (@singmajesty) so we can fix this.");
+							Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and create an issue on GitHub so we can fix this.");
 							break;
 						}
 
@@ -1200,7 +1206,7 @@ class TextEngine
 
 					if (!nextFormatRange())
 					{
-						Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and contact Joshua Granick (@singmajesty) so we can fix this.");
+						Log.warn("You found a bug in OpenFL's text code! Please save a copy of your project and create an issue on GitHub so we can fix this.");
 						break;
 					}
 
@@ -1248,11 +1254,13 @@ class TextEngine
 			// breaks up words that are too long to fit in a single line
 
 			var remainingPositions = positions;
-			var i, bufferCount, placeIndex, positionWidth;
-			var currentPosition;
+			var bufferCount:Int;
+			var placeIndex:Int;
+			var positionWidth:Float;
+			var currentPosition:#if (js && html5) Float #else GlyphPosition #end;
 
 			var tempWidth = getPositionsWidth(remainingPositions);
-			i = remainingPositions.length - 1;
+			var i = remainingPositions.length - 1;
 			while (i >= 0)
 			{
 				// strip away the combined width of whitespace at the end of the
@@ -1356,7 +1364,7 @@ class TextEngine
 		setParagraphMetrics();
 		setLineMetrics();
 
-		var wrap;
+		var wrap:Bool;
 		var maxLoops = text.length +
 			1; // Do an extra iteration to ensure a LayoutGroup is created in case the last line is empty (multiline or trailing line break).
 		// TODO: check if the +1 is still needed, since the extra layout group is handled separately
@@ -1716,7 +1724,8 @@ class TextEngine
 		var lineIndex = -1;
 		var offsetX = 0.0;
 		var totalWidth = this.width - 4; // TODO: do margins and stuff affect this?
-		var group, lineLength;
+		var group:TextLayoutGroup;
+		var lineLength:Int;
 		var lineMeasurementsDirty = false;
 
 		for (i in 0...layoutGroups.length)
@@ -2033,3 +2042,4 @@ private class DefaultFontSet
 		return normal;
 	}
 }
+#end

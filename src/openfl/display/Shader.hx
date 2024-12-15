@@ -1,5 +1,8 @@
 package openfl.display;
 
+import openfl.display3D.Context3DWrapMode;
+import openfl.display3D.Context3DMipFilter;
+import openfl.display3D.Context3DTextureFilter;
 #if !flash
 import openfl.display3D._internal.GLProgram;
 import openfl.display3D._internal.GLShader;
@@ -102,12 +105,11 @@ import openfl.utils.ByteArray;
 	**Mobile Browser Support:** This feature is not supported in mobile
 	browsers.
 
-	_AIR profile support:_ This feature is supported on all desktop operating
+	_Adobe AIR profile support:_ This feature is supported on all desktop operating
 	systems, but it is not supported on all mobile devices. It is not
-	supported on AIR for TV devices. See <a
-	href="http://help.adobe.com/en_US/air/build/WS144092a96ffef7cc16ddeea2126bb46b82f-8000.html">
-	AIR Profile Support</a> for more information regarding API support across
-	multiple profiles.
+	supported on AIR for TV devices. See
+	[AIR Profile Support](https://help.adobe.com/en_US/air/build/WS144092a96ffef7cc16ddeea2126bb46b82f-8000.html)
+	for more information regarding API support across multiple profiles.
 **/
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
@@ -214,6 +216,14 @@ class Shader
 	@:noCompletion private var __bitmap:ShaderInput<BitmapData>;
 	@:noCompletion private var __colorMultiplier:ShaderParameter<Float>;
 	@:noCompletion private var __colorOffset:ShaderParameter<Float>;
+	#if openfl_experimental_multitexture
+	@:noCompletion private var __textureId:ShaderParameter<Float>;
+	@:noCompletion private var __multiTextureColorTransform:ShaderParameter<Float>;
+	@:noCompletion private var __matrixRow0:ShaderParameter<Float>;
+	@:noCompletion private var __matrixRow1:ShaderParameter<Float>;
+	@:noCompletion private var __matrixRow2:ShaderParameter<Float>;
+	@:noCompletion private var __matrixRow3:ShaderParameter<Float>;
+	#end
 	@:noCompletion private var __context:Context3D;
 	@:noCompletion private var __data:ShaderData;
 	@:noCompletion private var __glFragmentSource:String;
@@ -436,7 +446,6 @@ class Shader
 
 		for (input in __inputBitmapData)
 		{
-			if (input.index < 0 || input.index == null) continue;
 			gl.uniform1i(input.index, textureCount);
 			textureCount++;
 		}
@@ -716,6 +725,14 @@ class Shader
 								case "openfl_Position": __position = parameter;
 								case "openfl_TextureCoord": __textureCoord = parameter;
 								case "openfl_TextureSize": __textureSize = parameter;
+								#if openfl_experimental_multitexture
+								case "openfl_TextureId": __textureId = parameter;
+								case "openfl_HasMultiTextureColorTransform": __multiTextureColorTransform = parameter;
+								case "openfl_MatrixRow0": __matrixRow0 = parameter;
+								case "openfl_MatrixRow1": __matrixRow1 = parameter;
+								case "openfl_MatrixRow2": __matrixRow2 = parameter;
+								case "openfl_MatrixRow3": __matrixRow3 = parameter;
+								#end
 								default:
 							}
 						}
@@ -775,7 +792,11 @@ class Shader
 	@:noCompletion private function __updateGLFromBuffer(shaderBuffer:ShaderBuffer, bufferOffset:Int):Void
 	{
 		var textureCount = 0;
-		var input, inputData, inputFilter, inputMipFilter, inputWrap;
+		var input:ShaderInput<BitmapData>;
+		var inputData:BitmapData;
+		var inputFilter:Context3DTextureFilter;
+		var inputMipFilter:Context3DMipFilter;
+		var inputWrap:Context3DWrapMode;
 
 		for (i in 0...shaderBuffer.inputCount)
 		{
@@ -821,10 +842,13 @@ class Shader
 		var floatCount = shaderBuffer.paramFloatCount;
 		var paramData = shaderBuffer.paramData;
 
-		var boolRef, floatRef, intRef, hasOverride;
-		var overrideBoolValue:Array<Bool> = null,
-			overrideFloatValue:Array<Float> = null,
-			overrideIntValue:Array<Int> = null;
+		var boolRef:ShaderParameter<Bool>;
+		var floatRef:ShaderParameter<Float>;
+		var intRef:ShaderParameter<Int>;
+		var hasOverride:Bool;
+		var overrideBoolValue:Array<Bool> = null;
+		var overrideFloatValue:Array<Float> = null;
+		var overrideIntValue:Array<Int> = null;
 
 		for (i in 0...shaderBuffer.paramCount)
 		{

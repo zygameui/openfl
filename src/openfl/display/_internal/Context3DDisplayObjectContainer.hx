@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 #if !openfl_debug
 @:fileXml(' tags="haxe,release" ')
 @:noDebug
@@ -13,6 +14,8 @@ class Context3DDisplayObjectContainer
 		displayObjectContainer.__cleanupRemovedChildren();
 
 		if (!displayObjectContainer.__renderable || displayObjectContainer.__worldAlpha <= 0) return;
+
+		//renderer.begin();
 
 		Context3DDisplayObject.renderDrawable(displayObjectContainer, renderer);
 
@@ -65,3 +68,4 @@ class Context3DDisplayObjectContainer
 		}
 	}
 }
+#end

@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.BitmapData;
 import openfl.display.CanvasRenderer;
 import openfl.display.CapsStyle;
@@ -23,6 +24,8 @@ import js.html.CanvasPattern;
 import js.html.CanvasRenderingContext2D;
 import js.html.CanvasWindingRule;
 import js.Browser;
+import js.html.DOMMatrix;
+import js.html.Path2D;
 #end
 
 @:access(openfl.display.DisplayObject)
@@ -102,14 +105,15 @@ class CanvasGraphics
 	}
 
 	@SuppressWarnings("checkstyle:Dynamic")
-	private static function createGradientPattern(type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix,
+	private static function createGradientPattern(type:GradientType, colors:Array<Int>, alphas:Array<Float>, ratios:Array<Int>, matrix:Matrix,
 			spreadMethod:SpreadMethod, interpolationMethod:InterpolationMethod, focalPointRatio:Float):#if (js && html5) CanvasPattern #else Void #end
 	{
 		#if (js && html5)
 		var gradientFill:CanvasGradient = null,
 			point:Point = null,
 			point2:Point = null,
-			releaseMatrix = false;
+			releaseMatrix = false,
+			ratio:Float = 0.0;
 
 		if (matrix == null)
 		{
@@ -129,29 +133,131 @@ class CanvasGraphics
 				inversePendingMatrix = matrix.clone();
 				inversePendingMatrix.invert();
 
+				for (i in 0...colors.length)
+				{
+					ratio = ratios[i] / 0xFF;
+					if (ratio < 0) ratio = 0;
+					else if (ratio > 1) ratio = 1;
+
+					gradientFill.addColorStop(ratio, getRGBA(colors[i], alphas[i]));
+				}
+
+				if (point != null) Point.__pool.release(point);
+				if (point2 != null) Point.__pool.release(point2);
+				if (releaseMatrix) Matrix.__pool.release(matrix);
+
+				return cast(gradientFill);
+
 			case LINEAR:
-				gradientFill = context.createLinearGradient(-819.2, 0, 819.2, 0);
+				if (spreadMethod == PAD)
+				{
+					gradientFill = context.createLinearGradient(-819.2, 0, 819.2, 0);
 
-				pendingMatrix = matrix.clone();
-				inversePendingMatrix = matrix.clone();
+					pendingMatrix = matrix.clone();
+					inversePendingMatrix = matrix.clone();
+					inversePendingMatrix.invert();
+
+					for (i in 0...colors.length)
+					{
+						ratio = ratios[i] / 0xFF;
+						if (ratio < 0) ratio = 0;
+						else if (ratio > 1) ratio = 1;
+
+						gradientFill.addColorStop(ratio, getRGBA(colors[i], alphas[i]));
+					}
+
+					if (point != null) Point.__pool.release(point);
+					if (point2 != null) Point.__pool.release(point2);
+					if (releaseMatrix) Matrix.__pool.release(matrix);
+
+					return cast(gradientFill);
+				}
+
+				var gradientScale:Float = spreadMethod == PAD ? 1.0 : 25.0;
+				var dx = 0.5 * (gradientScale - 1.0) * 1638.4;
+				var canvas:CanvasElement = cast Browser.document.createElement("canvas");
+				var context2 = canvas.getContext("2d");
+
+				var dimensions:Dynamic = getDimensions(matrix);
+
+				canvas.width = context.canvas.width;
+				canvas.height = context.canvas.height;
+				gradientFill = context.createLinearGradient(-819.2 - dx, 0, 819.2 + dx, 0);
+				if (spreadMethod == REFLECT)
+				{
+					var t:Float = 0;
+					var step:Float = 1 / 25;
+					var a:Int;
+					while (t < 1)
+					{
+						for (i in 0...colors.length)
+						{
+							ratio = ratios[i] / 0xFF;
+							ratio = t + ratio * step;
+							if (ratio < 0) ratio = 0;
+							else if (ratio > 1) ratio = 1;
+
+							gradientFill.addColorStop(ratio, getRGBA(colors[i], alphas[i]));
+						}
+						t += step;
+						a = colors.length - 1;
+						while (a >= 0)
+						{
+							ratio = ratios[a] / 0xFF;
+							ratio = t + (1.0 - ratio) * step;
+							if (ratio < 0) ratio = 0;
+							else if (ratio > 1) ratio = 1;
+							gradientFill.addColorStop(ratio, getRGBA(colors[a], alphas[a]));
+							a--;
+						}
+						t += step;
+					}
+				}
+				else if (spreadMethod == REPEAT)
+				{
+					var t:Float = 0;
+					var step:Float = 1 / 25;
+					var a:Int;
+					while (t < 1)
+					{
+						for (i in 0...colors.length)
+						{
+							ratio = ratios[i] / 0xFF;
+							ratio = t + ratio * step;
+							if (ratio < 0) ratio = 0;
+							else if (ratio > 1) ratio = 1 - 0.001;
+
+							gradientFill.addColorStop(ratio, getRGBA(colors[i], alphas[i]));
+						}
+
+						ratio = t + 0.001;
+						if (ratio < 0) ratio = 0;
+						else if (ratio > 1) ratio = 1;
+						gradientFill.addColorStop(ratio - 0.001, getRGBA(colors[colors.length - 1], alphas[alphas.length - 1]));
+						gradientFill.addColorStop(ratio, getRGBA(colors[0], alphas[0]));
+
+						t += step;
+					}
+				}
+
+				pendingMatrix = new Matrix();
+				pendingMatrix.tx = matrix.tx - dimensions.width / 2;
+				pendingMatrix.ty = matrix.ty - dimensions.height / 2;
+
+				inversePendingMatrix = pendingMatrix.clone();
 				inversePendingMatrix.invert();
-		}
 
-		var rgb:Int, alpha:Float, r:Float, g:Float, b:Float, ratio:Float;
-
-		for (i in 0...colors.length)
-		{
-			rgb = colors[i];
-			alpha = alphas[i];
-			r = (rgb & 0xFF0000) >>> 16;
-			g = (rgb & 0x00FF00) >>> 8;
-			b = (rgb & 0x0000FF);
-
-			ratio = ratios[i] / 0xFF;
-			if (ratio < 0) ratio = 0;
-			if (ratio > 1) ratio = 1;
-
-			gradientFill.addColorStop(ratio, "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")");
+				var path:Path2D = cast new Path2D();
+				path.rect(0, 0, canvas.width, canvas.height);
+				path.closePath();
+				var gradientMatrix:DOMMatrix = new DOMMatrix([matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty]);
+				var inverseMatrix = cast gradientMatrix.inverse();
+				var untransformedPath:Path2D = cast new Path2D();
+				untransformedPath.addPath(path, inverseMatrix);
+				context2.fillStyle = gradientFill;
+				context2.setTransform(gradientMatrix);
+				context2.fill(untransformedPath);
+				return cast context.createPattern(canvas, 'no-repeat');
 		}
 
 		if (point != null) Point.__pool.release(point);
@@ -160,6 +266,33 @@ class CanvasGraphics
 
 		return cast(gradientFill);
 		#end
+	}
+
+	private static function getRGBA(color:UInt, alpha:Float):String
+	{
+		var r:UInt = (color & 0xFF0000) >>> 16;
+		var g:UInt = (color & 0x00FF00) >>> 8;
+		var b:UInt = (color & 0x0000FF);
+
+		return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+	}
+
+	private static function getDimensions(matrix:Matrix):Dynamic
+	{
+		var angle:Float = Math.atan2(matrix.c, matrix.a);
+		var cos:Float = Math.cos(angle);
+
+		var w:Float = (matrix.a / cos) * 1638.4;
+		var h:Float = (matrix.d / cos) * 1638.4;
+
+		if (w == 0 && h == 0)
+		{
+			w = h = 819.2;
+		}
+		return {
+			width: w,
+			height: h
+		};
 	}
 
 	private static function createTempPatternCanvas(bitmap:BitmapData, repeat:Bool, width:Int, height:Int):#if (js && html5) CanvasElement #else Void #end
@@ -247,6 +380,7 @@ class CanvasGraphics
 
 		if (graphics.__commands.length == 0 || bounds == null || bounds.width <= 0 || bounds.height <= 0)
 		{
+			CanvasGraphics.graphics = null;
 			return false;
 		}
 		else
@@ -270,10 +404,6 @@ class CanvasGraphics
 			graphics.__context = hitTestContext;
 
 			context = graphics.__context;
-			#if zygameui
-			// #FIX ZYGAMEUI
-			if (context == null) return false;
-			#end
 			context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
 			fillCommands.clear();
@@ -322,6 +452,17 @@ class CanvasGraphics
 						strokeCommands.lineBitmapStyle(c.bitmap, c.matrix, c.repeat, c.smooth);
 
 					case LINE_STYLE:
+						endStroke();
+
+						if (hasStroke && (context : Dynamic).isPointInStroke(x, y))
+						{
+							data.destroy();
+							graphics.__canvas = cacheCanvas;
+							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
+							return true;
+						}
+
 						var c = data.readLineStyle();
 						strokeCommands.lineStyle(c.thickness, c.color, 1, c.pixelHinting, c.scaleMode, c.caps, c.joints, c.miterLimit);
 
@@ -334,6 +475,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -344,6 +486,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -358,6 +501,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -368,6 +512,7 @@ class CanvasGraphics
 							data.destroy();
 							graphics.__canvas = cacheCanvas;
 							graphics.__context = cacheContext;
+							CanvasGraphics.graphics = null;
 							return true;
 						}
 
@@ -453,13 +598,9 @@ class CanvasGraphics
 
 			data.destroy();
 
-			// zygameui 需要释放
-			fillCommands.clear();
-			strokeCommands.clear();
-			CanvasGraphics.graphics = null;
-
 			graphics.__canvas = cacheCanvas;
 			graphics.__context = cacheContext;
+			CanvasGraphics.graphics = null;
 			return hitTest;
 		}
 		#end
@@ -536,28 +677,28 @@ class CanvasGraphics
 
 		var data = new DrawCommandReader(commands);
 
-		var x,
-			y,
-			width,
-			height,
-			kappa = .5522848,
-			ox,
-			oy,
-			xe,
-			ye,
-			xm,
-			ym,
-			r,
-			g,
-			b;
-		var optimizationUsed,
-			canOptimizeMatrix,
-			st:Float,
-			sr:Float,
-			sb:Float,
-			sl:Float,
-			stl = null,
-			sbr = null;
+		var x:Float;
+		var y:Float;
+		var width:Float;
+		var height:Float;
+		var kappa = 0.5522848;
+		var ox:Float;
+		var oy:Float;
+		var xe:Float;
+		var ye:Float;
+		var xm:Float;
+		var ym:Float;
+		var r:Int;
+		var g:Int;
+		var b:Int;
+		var optimizationUsed:Bool;
+		var canOptimizeMatrix:Bool;
+		var st:Float;
+		var sr:Float;
+		var sb:Float;
+		var sl:Float;
+		var stl:Point = null;
+		var sbr:Point = null;
 
 		for (type in commands.types)
 		{
@@ -575,10 +716,16 @@ class CanvasGraphics
 						c.anchorY
 						- offsetY);
 
+					positionX = c.anchorX;
+					positionY = c.anchorY;
+
 				case CURVE_TO:
 					var c = data.readCurveTo();
 					hasPath = true;
 					context.quadraticCurveTo(c.controlX - offsetX, c.controlY - offsetY, c.anchorX - offsetX, c.anchorY - offsetY);
+
+					positionX = c.anchorX;
+					positionY = c.anchorY;
 
 				case DRAW_CIRCLE:
 					var c = data.readDrawCircle();
@@ -708,14 +855,34 @@ class CanvasGraphics
 					}
 
 					context.moveTo(positionX - offsetX, positionY - offsetY);
-					context.strokeStyle = createBitmapFill(c.bitmap, c.repeat, c.smooth);
+					if (c.bitmap.readable)
+					{
+						context.strokeStyle = createBitmapFill(c.bitmap, c.repeat, c.smooth);
+					}
+					else
+					{
+						// if it's hardware-only BitmapData, fall back to
+						// drawing solid black because we have no software
+						// pixels to work with
+						context.strokeStyle = "#" + StringTools.hex(0, 6);
+					}
 
 					hasStroke = true;
 
 				case BEGIN_BITMAP_FILL:
 					var c = data.readBeginBitmapFill();
 					bitmapFill = c.bitmap;
-					context.fillStyle = createBitmapFill(c.bitmap, c.repeat, c.smooth);
+					if (c.bitmap.readable)
+					{
+						context.fillStyle = createBitmapFill(c.bitmap, c.repeat, c.smooth);
+					}
+					else
+					{
+						// if it's hardware-only BitmapData, fall back to
+						// drawing solid black because we have no software
+						// pixels to work with
+						context.fillStyle = "#" + StringTools.hex(0, 6);
+					}
 					hasFill = true;
 
 					if (c.matrix != null)
@@ -815,7 +982,8 @@ class CanvasGraphics
 					// var roundPixels = renderer.__roundPixels;
 					var alpha = CanvasGraphics.worldAlpha;
 
-					var ri, ti;
+					var ri:Int;
+					var ti:Int;
 
 					context.save(); // TODO: Restore transform without save/restore
 
@@ -866,7 +1034,7 @@ class CanvasGraphics
 
 						context.setTransform(tileTransform.a, tileTransform.b, tileTransform.c, tileTransform.d, tileTransform.tx, tileTransform.ty);
 
-						if (bitmapFill != null)
+						if (bitmapFill != null && bitmapFill.readable)
 						{
 							context.drawImage(bitmapFill.image.src, tileRect.x, tileRect.y, tileRect.width, tileRect.height, 0, 0, tileRect.width,
 								tileRect.height);
@@ -1030,7 +1198,7 @@ class CanvasGraphics
 					var c = data.readDrawRect();
 					optimizationUsed = false;
 
-					if (bitmapFill != null && !hitTesting)
+					if (bitmapFill != null && bitmapFill.readable && !hitTesting)
 					{
 						st = 0;
 						sr = 0;
@@ -1073,7 +1241,10 @@ class CanvasGraphics
 						if (canOptimizeMatrix && st >= 0 && sl >= 0 && sr <= bitmapFill.width && sb <= bitmapFill.height)
 						{
 							optimizationUsed = true;
-							if (!hitTesting) context.drawImage(bitmapFill.image.src, sl, st, sr - sl, sb - st, c.x - offsetX, c.y - offsetY, c.width, c.height);
+							if (!hitTesting)
+							{
+								context.drawImage(bitmapFill.image.src, sl, st, sr - sl, sb - st, c.x - offsetX, c.y - offsetY, c.width, c.height);
+							}
 						}
 					}
 
@@ -1174,15 +1345,7 @@ class CanvasGraphics
 			{
 				graphics.__canvas = null;
 				graphics.__context = null;
-				#if zygameui
-				if (graphics.__bitmap != null)
-				{
-					graphics.__bitmap.dispose();
-				}
 				graphics.__bitmap = null;
-				#else
-				graphics.__bitmap = null;
-				#end
 			}
 			else
 			{
@@ -1471,9 +1634,6 @@ class CanvasGraphics
 				}
 
 				data.destroy();
-				#if zygameui
-				if (graphics.__bitmap != null) graphics.__bitmap.dispose();
-				#end
 				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
 			}
 
@@ -1502,7 +1662,17 @@ class CanvasGraphics
 
 			var data = new DrawCommandReader(graphics.__commands);
 
-			var x, y, width, height, kappa = .5522848, ox, oy, xe, ye, xm, ym;
+			var x:Float;
+			var y:Float;
+			var width:Float;
+			var height:Float;
+			var kappa = 0.5522848;
+			var ox:Float;
+			var oy:Float;
+			var xe:Float;
+			var ye:Float;
+			var xm:Float;
+			var ym:Float;
 
 			for (type in graphics.__commands.types)
 			{
@@ -1609,3 +1779,4 @@ private typedef NormalizedUVT =
 	max:Float,
 	uvt:Vector<Float>
 }
+#end

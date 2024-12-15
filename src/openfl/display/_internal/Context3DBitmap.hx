@@ -1,7 +1,9 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display.Bitmap;
 import openfl.display.OpenGLRenderer;
+import openfl.display3D.VertexBuffer3D;
 #if gl_stats
 import openfl.display._internal.stats.Context3DStats;
 import openfl.display._internal.stats.DrawCallContext;
@@ -27,35 +29,84 @@ class Context3DBitmap
 
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid)
 		{
-			var context = renderer.__context3D;
+			#if openfl_experimental_multitexture
+			var allowedToMultiRender:Bool = bitmap.__filters == null && bitmap.__worldShader == null && bitmap.__mask == null && bitmap.__scrollRect == null;
+			if(allowedToMultiRender)
+			{
+				renderer.__bitmapRenderPool.push(bitmap);
+			}else #end {
+				renderer.begin();
 
-			renderer.__setBlendMode(bitmap.__worldBlendMode);
-			renderer.__pushMaskObject(bitmap);
-			// renderer.filterManager.pushObject (bitmap);
+				var context = renderer.__context3D;
+				flush(bitmap, renderer);
+			}
 
-			var shader = renderer.__initDisplayShader(cast bitmap.__worldShader);
-			renderer.setShader(shader);
-			renderer.applyBitmapData(bitmap.__bitmapData, renderer.__allowSmoothing && (bitmap.smoothing || renderer.__upscaled));
-			renderer.applyMatrix(renderer.__getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping));
-			renderer.applyAlpha(bitmap.__worldAlpha);
-			renderer.applyColorTransform(bitmap.__worldColorTransform);
-			renderer.updateShader();
-
-			var vertexBuffer = bitmap.__bitmapData.getVertexBuffer(context);
-			if (shader.__position != null) context.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_3);
-			if (shader.__textureCoord != null) context.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2);
-			var indexBuffer = bitmap.__bitmapData.getIndexBuffer(context);
-			context.drawTriangles(indexBuffer);
-
-			#if gl_stats
-			Context3DStats.incrementDrawCall(DrawCallContext.STAGE);
-			#end
-
-			renderer.__clearShader();
-
-			// renderer.filterManager.popObject (bitmap);
-			renderer.__popMaskObject(bitmap);
 		}
+	}
+
+	private static function flush(bitmap:Bitmap, renderer:OpenGLRenderer #if openfl_experimental_multitexture, vertexBuffer:VertexBuffer3D = null, multiTextureShader:MultiTextureShader = null, bitmapRenderPool:Array<Bitmap> = null, textureId:Int = 0 #end):Void
+	{
+		var context = renderer.__context3D;
+		//renderer.begin();
+
+		renderer.__setBlendMode(bitmap.__worldBlendMode);
+		renderer.__pushMaskObject(bitmap);
+		// renderer.filterManager.pushObject (bitmap);
+
+		var worldShader = bitmap.__worldShader;
+		#if openfl_experimental_multitexture
+		if(worldShader == null)
+		{
+			worldShader = multiTextureShader;
+		}
+		#end
+
+        var shader = renderer.__initDisplayShader(cast worldShader);
+        renderer.setShader(shader);
+        renderer.applyBitmapData(bitmap.__bitmapData, renderer.__allowSmoothing && (bitmap.smoothing || renderer.__upscaled));
+        renderer.applyMatrix(renderer.__getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping));
+		renderer.applyAlpha(bitmap.__worldAlpha);
+        renderer.applyColorTransform(bitmap.__worldColorTransform);
+		//renderer.applyHasColorTransform(!bitmap.__worldColorTransform.__isDefault(true));
+		#if openfl_experimental_multitexture
+		renderer.applyTextureId(textureId);
+		#end
+        renderer.updateShader();
+		#if openfl_experimental_multitexture
+		if(bitmapRenderPool != null)
+		{
+			var length:Int = Std.int(Math.min(bitmapRenderPool.length, context.__quadIndexBufferElements));
+
+			if (shader.__position != null) context.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_3); // 0x00 - 0x02
+			if (shader.__textureCoord != null) context.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2); // 0x03 - 0x04
+			if (shader.__textureId != null) context.setVertexBufferAt(shader.__textureId.index, vertexBuffer, 5, FLOAT_1);
+			if (shader.__alpha != null) context.setVertexBufferAt(shader.__alpha.index, vertexBuffer, 6, FLOAT_1); // 0x03 - 0x04
+			if (shader.__multiTextureColorTransform != null) context.setVertexBufferAt(shader.__multiTextureColorTransform.index, vertexBuffer, 7, FLOAT_1);
+			if (shader.__colorMultiplier != null) context.setVertexBufferAt(shader.__colorMultiplier.index, vertexBuffer, 8, FLOAT_4);
+			if (shader.__colorOffset != null) context.setVertexBufferAt(shader.__colorOffset.index, vertexBuffer, 12, FLOAT_4);
+			if (shader.__matrixRow0 != null) context.setVertexBufferAt(shader.__matrixRow0.index, vertexBuffer, 16, FLOAT_4);
+			if (shader.__matrixRow1 != null) context.setVertexBufferAt(shader.__matrixRow1.index, vertexBuffer, 20, FLOAT_4);
+			if (shader.__matrixRow2 != null) context.setVertexBufferAt(shader.__matrixRow2.index, vertexBuffer, 24, FLOAT_4);
+			if (shader.__matrixRow3 != null) context.setVertexBufferAt(shader.__matrixRow3.index, vertexBuffer, 28, FLOAT_4);
+
+			context.drawTriangles(context.__quadIndexBuffer, 0, length * 2);
+		}else #end {
+			#if !openfl_experimental_multitexture var #end vertexBuffer = bitmap.__bitmapData.getVertexBuffer(context);
+            if (shader.__position != null) context.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_3);
+            if (shader.__textureCoord != null) context.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2);
+            var indexBuffer = bitmap.__bitmapData.getIndexBuffer(context);
+            context.drawTriangles(indexBuffer);
+		}
+
+
+		#if gl_stats
+		Context3DStats.incrementDrawCall(DrawCallContext.STAGE);
+		#end
+
+		renderer.__clearShader();
+
+		// renderer.filterManager.popObject (bitmap);
+		renderer.__popMaskObject(bitmap);
 	}
 
 	public static function renderDrawable(bitmap:Bitmap, renderer:OpenGLRenderer):Void
@@ -67,9 +118,6 @@ class Context3DBitmap
 			bitmap.__imageVersion = bitmap.__bitmapData.image.version;
 		}
 
-		// todo zygameui 这是调整了位置的
-		renderer.__renderEvent(bitmap);
-
 		if (bitmap.__cacheBitmap != null && !bitmap.__isCacheBitmapRender)
 		{
 			Context3DBitmap.render(bitmap.__cacheBitmap, renderer);
@@ -80,6 +128,7 @@ class Context3DBitmap
 			Context3DBitmap.render(bitmap, renderer);
 		}
 
+		renderer.__renderEvent(bitmap);
 	}
 
 	public static function renderDrawableMask(bitmap:Bitmap, renderer:OpenGLRenderer):Void
@@ -113,3 +162,4 @@ class Context3DBitmap
 		}
 	}
 }
+#end

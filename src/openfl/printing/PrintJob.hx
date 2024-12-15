@@ -22,16 +22,16 @@ import js.Browser;
 	print an unscaled document with proportions that map to the proportions of
 	the content. This capability is especially useful for rendering and
 	printing dynamic content, such as database content and dynamic text.
+
 	**Mobile Browser Support:** This class is not supported in mobile
 	browsers.
 
-	_AIR profile support:_ This feature is supported on all desktop operating
+	_Adobe AIR profile support:_ This feature is supported on all desktop operating
 	systems, but it is not supported on mobile devices or AIR for TV devices.
 	You can test for support at run time using the `PrintJob.isSupported`
-	property. See <a
-	href="http://help.adobe.com/en_US/air/build/WS144092a96ffef7cc16ddeea2126bb46b82f-8000.html">
-	AIR Profile Support</a> for more information regarding API support across
-	multiple profiles.
+	property. See
+	[AIR Profile Support](https://help.adobe.com/en_US/air/build/WS144092a96ffef7cc16ddeea2126bb46b82f-8000.html)
+	for more information regarding API support across multiple profiles.
 
 	Use the `PrintJob()` constructor to create a print job.
 
@@ -40,8 +40,8 @@ import js.Browser;
 	orientation, and you can configure your document to dynamically format
 	Flash content that is appropriate for the printer settings.
 
-	**Note:** ActionScript 3.0 does not restrict a PrintJob object to a single
-	frame (as did previous versions of ActionScript). However, since the
+	**Note:** OpenFL does not restrict a PrintJob object to a single
+	frame (as did previous versions of ActionScript 2.0). However, since the
 	operating system displays print status information to the user after the
 	user has clicked the OK button in the Print dialog box, you should call
 	`PrintJob.addPage()` and `PrintJob.send()` as soon as possible to send
@@ -274,7 +274,7 @@ class PrintJob
 						 `frameNumber`, pass `null` for `options`.
 		@param frameNum  An optional number that lets you specify which frame
 						 of a MovieClip object to print. Passing a `frameNum`
-						 does not invoke ActionScript on that frame. If you
+						 does not invoke Haxe code on that frame. If you
 						 omit this parameter and the `sprite` parameter is a
 						 MovieClip object, the current frame in `sprite` is
 						 printed.
@@ -340,7 +340,7 @@ class PrintJob
 
 			var div:DivElement;
 			var image:Image;
-			var bitmapData;
+			var bitmapData:BitmapData;
 
 			for (i in 0...__bitmapData.length)
 			{

@@ -75,11 +75,11 @@ class Script extends hxp.Script
 		}
 		else if (command == "test")
 		{
-			System.runCommand("tests", "hxp", getTestArgs());
+			System.runCommand("tests", "haxelib", ["run", "hxp"].concat(getTestArgs()));
 		}
 		else
 		{
-			System.runCommand("tests", "hxp", [command].concat(getTestArgs()));
+			System.runCommand("tests", "haxelib", ["run", "hxp", command].concat(getTestArgs()));
 		}
 	}
 
@@ -89,6 +89,10 @@ class Script extends hxp.Script
 		if (defines.exists("target"))
 		{
 			args.push('-Dtarget=${defines.get("target")}');
+		}
+		if (defines.exists("use-lime-tools"))
+		{
+			args.push('-Duse-lime-tools');
 		}
 		return args;
 	}
