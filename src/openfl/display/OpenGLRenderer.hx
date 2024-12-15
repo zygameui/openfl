@@ -667,16 +667,13 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 		if (true)
 		{
-			var uvWidth = 1;
-			var uvHeight = 1;
-
 			#if lime
 				var __vertexBufferContext = context.__context;
 				var __vertexBufferData:Float32Array = null;
 				if (__vertexBuffer == null)
 				{
 					var vertexDataPosition = 0;
-					var dataPerVertex = 33;
+					var dataPerVertex = 32;
 
 					__vertexBufferData = new Float32Array(bitmapDataArray.length * (dataPerVertex * 4));
 
@@ -686,56 +683,80 @@ class OpenGLRenderer extends DisplayObjectRenderer
 						var index = vertexDataPosition;
 						var bitmapData:BitmapData = @:privateAccess bitmap.__bitmapData;
 
-						__vertexBufferData[index + 0] = bitmapData.width;
-						__vertexBufferData[index + 1] = bitmapData.height;
-						__vertexBufferData[index + 3] = uvWidth;
-						__vertexBufferData[index + 4] = uvHeight;
-						__vertexBufferData[index + 5] = bitmap.multiTextureId;
-						__vertexBufferData[index + 6] = bitmap.__worldAlpha;
+						var scrollRect = bitmap.__scrollRect;
+						if(scrollRect != null)
+						{
+							var uvX = bitmapData.width > 0 ? scrollRect.x / bitmapData.width : 0;
+							var uvY = bitmapData.height > 0 ? scrollRect.y / bitmapData.height : 0;
+							var uvWidth = bitmapData.width > 0 ? scrollRect.width / bitmapData.width : 0;
+							var uvHeight = bitmapData.height > 0 ? scrollRect.height / bitmapData.height : 0;
+
+							__vertexBufferData[index + 0] = scrollRect.width;
+							__vertexBufferData[index + 1] = scrollRect.height;
+							__vertexBufferData[index + 2] = uvX + uvWidth;
+							__vertexBufferData[index + 3] = uvY + uvHeight;
+							__vertexBufferData[index + dataPerVertex + 1] = scrollRect.height;
+							__vertexBufferData[index + dataPerVertex + 2] = uvX;
+							__vertexBufferData[index + dataPerVertex + 3] = uvY + uvHeight;
+							__vertexBufferData[index + dataPerVertex * 2] = scrollRect.width;
+							__vertexBufferData[index + dataPerVertex * 2 + 2] = uvX + uvWidth;
+							__vertexBufferData[index + dataPerVertex * 2 + 3] = uvY;
+							__vertexBufferData[index + dataPerVertex * 3 + 2] = uvX;
+							__vertexBufferData[index + dataPerVertex * 3 + 3] = uvY;
+						}else{
+							__vertexBufferData[index + 0] = bitmapData.width;
+							__vertexBufferData[index + 1] = bitmapData.height;
+							__vertexBufferData[index + 2] = 1;
+							__vertexBufferData[index + 3] = 1;
+
+							__vertexBufferData[index + dataPerVertex + 1] = bitmapData.height;
+							__vertexBufferData[index + dataPerVertex + 3] = 1;
+							__vertexBufferData[index + dataPerVertex * 2] = bitmapData.width;
+							__vertexBufferData[index + dataPerVertex * 2 + 2] = 1;
+						}
+
+
+						__vertexBufferData[index + 4] = bitmap.multiTextureId;
+						__vertexBufferData[index + 5] = bitmap.__worldAlpha;
 
 						var colorTransform:ColorTransform = @:privateAccess bitmap.__worldColorTransform;
 						var hasColorTransform = !colorTransform.__isDefault(true);
 						var hasColorTransformValue = hasColorTransform ? 1 : 0;
-						__vertexBufferData[index + 7] = hasColorTransformValue;
+						__vertexBufferData[index + 6] = hasColorTransformValue;
 						if(hasColorTransform)
 						{
-							__vertexBufferData[index + 8] = colorTransform.redMultiplier;
-							__vertexBufferData[index + 9] = colorTransform.greenMultiplier;
-							__vertexBufferData[index + 10] = colorTransform.blueMultiplier;
-							__vertexBufferData[index + 11] = colorTransform.alphaMultiplier;
-							__vertexBufferData[index + 12] = colorTransform.redOffset;
-							__vertexBufferData[index + 13] = colorTransform.greenOffset;
-							__vertexBufferData[index + 14] = colorTransform.blueOffset;
-							__vertexBufferData[index + 15] = colorTransform.alphaOffset;
+							__vertexBufferData[index + 7] = colorTransform.redMultiplier;
+							__vertexBufferData[index + 8] = colorTransform.greenMultiplier;
+							__vertexBufferData[index + 9] = colorTransform.blueMultiplier;
+							__vertexBufferData[index + 10] = colorTransform.alphaMultiplier;
+							__vertexBufferData[index + 11] = colorTransform.redOffset;
+							__vertexBufferData[index + 12] = colorTransform.greenOffset;
+							__vertexBufferData[index + 13] = colorTransform.blueOffset;
+							__vertexBufferData[index + 14] = colorTransform.alphaOffset;
 						}
-
-						__vertexBufferData[index + dataPerVertex + 1] = bitmapData.height;
-						__vertexBufferData[index + dataPerVertex + 4] = uvHeight;
-						__vertexBufferData[index + dataPerVertex * 2] = bitmapData.width;
-						__vertexBufferData[index + dataPerVertex * 2 + 3] = uvWidth;
 
 						var matrixData:Array<Float> = __getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping);
 						for(v in 0...4)
 						{
-							__vertexBufferData[index + dataPerVertex * v + 5] = bitmap.multiTextureId;
-							__vertexBufferData[index + dataPerVertex * v + 6] = bitmap.__worldAlpha;
-							__vertexBufferData[index + dataPerVertex * v + 7] = hasColorTransformValue;
+							__vertexBufferData[index + dataPerVertex * v + 4] = bitmap.multiTextureId;
+							__vertexBufferData[index + dataPerVertex * v + 5] = bitmap.__worldAlpha;
+							__vertexBufferData[index + dataPerVertex * v + 6] = hasColorTransformValue;
 							if(hasColorTransform)
 							{
-								__vertexBufferData[index + dataPerVertex * v + 8] = colorTransform.redMultiplier;
-								__vertexBufferData[index + dataPerVertex * v + 9] = colorTransform.greenMultiplier;
-								__vertexBufferData[index + dataPerVertex * v + 10] = colorTransform.blueMultiplier;
-								__vertexBufferData[index + dataPerVertex * v + 11] = colorTransform.alphaMultiplier;
-								__vertexBufferData[index + dataPerVertex * v + 12] = colorTransform.redOffset;
-								__vertexBufferData[index + dataPerVertex * v + 13] = colorTransform.greenOffset;
-								__vertexBufferData[index + dataPerVertex * v + 14] = colorTransform.blueOffset;
-								__vertexBufferData[index + dataPerVertex * v + 15] = colorTransform.alphaOffset;
+								__vertexBufferData[index + dataPerVertex * v + 7] = colorTransform.redMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 8] = colorTransform.greenMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 9] = colorTransform.blueMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 10] = colorTransform.alphaMultiplier;
+								__vertexBufferData[index + dataPerVertex * v + 11] = colorTransform.redOffset;
+								__vertexBufferData[index + dataPerVertex * v + 12] = colorTransform.greenOffset;
+								__vertexBufferData[index + dataPerVertex * v + 13] = colorTransform.blueOffset;
+								__vertexBufferData[index + dataPerVertex * v + 14] = colorTransform.alphaOffset;
 							}
 							// Use 16 instead of matrixData.length to help compiler optimization
 							for(i in 0...16)
 							{
-								__vertexBufferData[index + 16 + i] = matrixData[i];
-								__vertexBufferData[index + dataPerVertex * v + 16 + i] = matrixData[i];
+								__vertexBufferData[index + 15 + i] = matrixData[i];
+								__vertexBufferData[index + dataPerVertex * v + 15 + i] = matrixData[i];
 							}
 						}
 

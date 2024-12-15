@@ -629,7 +629,7 @@ import lime.math.Vector2;
 				{
 					__stage3D.__indexBuffer = createIndexBuffer(6);
 
-					var indexData = new Vector<UInt>(6, false, [0, 1, 2, 2, 1, 3]);
+					var indexData = new Vector<UInt>([0, 1, 2, 2, 1, 3]);
 
 					__stage3D.__indexBuffer.uploadFromVector(indexData, 0, 6);
 				}
@@ -2329,7 +2329,8 @@ import lime.math.Vector2;
 	@:noCompletion private function __flushGLTextures():Void
 	{
 		var sampler = 0;
-		var texture, samplerState;
+		var texture:TextureBase;
+		var samplerState:SamplerState;
 
 		for (i in 0...__state.textures.length)
 		{

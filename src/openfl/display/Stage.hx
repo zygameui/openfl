@@ -52,11 +52,12 @@ import openfl.display._internal.stats.Context3DStats;
 #if (js && html5)
 import js.html.Element;
 import js.Browser;
-import openfl.display._internal.stats.DrawCallContext;
-import openfl.display._internal.stats.Context3DStats;
 #elseif js
 typedef Element = Dynamic;
 #end
+
+import openfl.display._internal.stats.DrawCallContext;
+import openfl.display._internal.stats.Context3DStats;
 
 /**
 	The Stage class represents the main drawing area.

@@ -1978,11 +1978,13 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 	@:noCompletion private function get_cacheAsBitmap():Bool
 	{
+		return false;
 		return (__filters == null ? __cacheAsBitmap : true);
 	}
 
 	@:noCompletion private function set_cacheAsBitmap(value:Bool):Bool
 	{
+		return false;
 		if (value != __cacheAsBitmap)
 		{
 			__setRenderDirty();
@@ -2016,8 +2018,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 	@:noCompletion private function set_filters(value:Array<BitmapFilter>):Array<BitmapFilter>
 	{
-		// TODO: Fix problem with filters
-		return [];
+		//return [];
 		if (value != null && value.length > 0)
 		{
 			var clonedFilters:Array<BitmapFilter> = [];
