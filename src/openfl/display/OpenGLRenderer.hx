@@ -683,11 +683,18 @@ class OpenGLRenderer extends DisplayObjectRenderer
 						var index = vertexDataPosition;
 						var bitmapData:BitmapData = @:privateAccess bitmap.__bitmapData;
 
+						var renderTransform = bitmap.__renderTransform;
+
+						var renderTransformTx = renderTransform.tx;
+						var renderTransformTy = renderTransform.ty;
 						var scrollRect = bitmap.__scrollRect;
 						if(scrollRect != null)
 						{
-							var uvX = bitmapData.width > 0 ? scrollRect.x / bitmapData.width : 0;
-							var uvY = bitmapData.height > 0 ? scrollRect.y / bitmapData.height : 0;
+							// TODO: Remove hackky solution, DisplayObject.__updateTransforms
+							renderTransform.__translateTransformed(scrollRect.x, scrollRect.y);
+
+							var uvX = (bitmapData.width > 0 ? scrollRect.x / bitmapData.width : 0) * 2;
+							var uvY = (bitmapData.height > 0 ? scrollRect.y / bitmapData.height : 0) * 2;
 							var uvWidth = bitmapData.width > 0 ? scrollRect.width / bitmapData.width : 0;
 							var uvHeight = bitmapData.height > 0 ? scrollRect.height / bitmapData.height : 0;
 
@@ -735,7 +742,15 @@ class OpenGLRenderer extends DisplayObjectRenderer
 							__vertexBufferData[index + 14] = colorTransform.alphaOffset;
 						}
 
-						var matrixData:Array<Float> = __getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping);
+						var matrixData:Array<Float> = __getMatrix(renderTransform, bitmap.pixelSnapping);
+
+						// TODO: Remove hackky solution revert scrollRect solution, DisplayObject.__updateTransforms
+						if(scrollRect != null)
+						{
+							renderTransform.tx = renderTransformTx;
+							renderTransform.ty = renderTransformTy;
+						}
+
 						for(v in 0...4)
 						{
 							__vertexBufferData[index + dataPerVertex * v + 4] = bitmap.multiTextureId;
@@ -1218,7 +1233,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 		if(object.__drawableType != BITMAP && object.__drawableType != SHAPE)
 		{
-			//this.begin();
+			this.begin();
 		}
 
 		switch (object.__drawableType)

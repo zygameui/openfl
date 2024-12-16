@@ -27,6 +27,7 @@ import lime.graphics.cairo.Cairo;
 import js.html.CanvasElement;
 import js.html.CanvasRenderingContext2D;
 import js.html.CSSStyleDeclaration;
+import openfl.display._internal.Context3DBitmap;
 #end
 
 /**
@@ -1978,13 +1979,11 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 	@:noCompletion private function get_cacheAsBitmap():Bool
 	{
-		return false;
 		return (__filters == null ? __cacheAsBitmap : true);
 	}
 
 	@:noCompletion private function set_cacheAsBitmap(value:Bool):Bool
 	{
-		return false;
 		if (value != __cacheAsBitmap)
 		{
 			__setRenderDirty();
@@ -2018,7 +2017,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 	@:noCompletion private function set_filters(value:Array<BitmapFilter>):Array<BitmapFilter>
 	{
-		//return [];
+		return [];
 		if (value != null && value.length > 0)
 		{
 			var clonedFilters:Array<BitmapFilter> = [];

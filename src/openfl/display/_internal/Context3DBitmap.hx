@@ -30,7 +30,7 @@ class Context3DBitmap
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid)
 		{
 			#if openfl_experimental_multitexture
-			var allowedToMultiRender:Bool = bitmap.__filters == null && bitmap.__worldShader == null && bitmap.__mask == null;
+			var allowedToMultiRender:Bool = eligableForMultiTexture(bitmap);
 			if(allowedToMultiRender)
 			{
 				renderer.__bitmapRenderPool.push(bitmap);
@@ -44,12 +44,19 @@ class Context3DBitmap
 		}
 	}
 
+	#if openfl_experimental_multitexture
+	public static inline function eligableForMultiTexture(bitmap:Bitmap):Bool
+	{
+		return bitmap.__filters == null && bitmap.__worldShader == null && bitmap.__mask == null && bitmap.scrollRect == null && bitmap.blendMode == NORMAL;
+	}
+	#end
+
 	private static function flush(bitmap:Bitmap, renderer:OpenGLRenderer #if openfl_experimental_multitexture, vertexBuffer:VertexBuffer3D = null, multiTextureShader:MultiTextureShader = null, bitmapRenderPool:Array<Bitmap> = null, textureId:Int = 0 #end):Void
 	{
 		var context = renderer.__context3D;
 		//renderer.begin();
 
-		var isMultiTexture:Bool = bitmapRenderPool != null && bitmapRenderPool.length > 1;
+		var isMultiTexture:Bool = #if openfl_experimental_multitexture bitmapRenderPool != null #else false #end;
 		if(!isMultiTexture)
 		{
 			renderer.__setBlendMode(bitmap.__worldBlendMode);
