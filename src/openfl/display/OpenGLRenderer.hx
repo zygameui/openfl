@@ -109,6 +109,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
     #if openfl_experimental_multitexture
     @:noCompletion private var __bitmapRenderPool:Array<Bitmap> = [];
     #end
+	private var __vertexBufferData:Float32Array;
 
 	@:noCompletion private function new(context:Context3D, defaultRenderTarget:BitmapData = null)
 	{
@@ -669,13 +670,16 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		{
 			#if lime
 				var __vertexBufferContext = context.__context;
-				var __vertexBufferData:Float32Array = null;
 				if (__vertexBuffer == null)
 				{
 					var vertexDataPosition = 0;
 					var dataPerVertex = 32;
 
-					__vertexBufferData = new Float32Array(bitmapDataArray.length * (dataPerVertex * 4));
+					var vertexBufferSize:Int = bitmapDataArray.length * (dataPerVertex * 4);
+					if(__vertexBufferData == null || vertexBufferSize > __vertexBufferData.length)
+					{
+						__vertexBufferData = new Float32Array(vertexBufferSize);
+					}
 
 
 					for(bitmap in bitmapDataArray)
@@ -722,26 +726,9 @@ class OpenGLRenderer extends DisplayObjectRenderer
 							__vertexBufferData[index + dataPerVertex * 2 + 2] = 1;
 						}
 
-
-						__vertexBufferData[index + 4] = bitmap.multiTextureId;
-						__vertexBufferData[index + 5] = bitmap.__worldAlpha;
-
 						var colorTransform:ColorTransform = @:privateAccess bitmap.__worldColorTransform;
 						var hasColorTransform = !colorTransform.__isDefault(true);
 						var hasColorTransformValue = hasColorTransform ? 1 : 0;
-						__vertexBufferData[index + 6] = hasColorTransformValue;
-						if(hasColorTransform)
-						{
-							__vertexBufferData[index + 7] = colorTransform.redMultiplier;
-							__vertexBufferData[index + 8] = colorTransform.greenMultiplier;
-							__vertexBufferData[index + 9] = colorTransform.blueMultiplier;
-							__vertexBufferData[index + 10] = colorTransform.alphaMultiplier;
-							__vertexBufferData[index + 11] = colorTransform.redOffset;
-							__vertexBufferData[index + 12] = colorTransform.greenOffset;
-							__vertexBufferData[index + 13] = colorTransform.blueOffset;
-							__vertexBufferData[index + 14] = colorTransform.alphaOffset;
-						}
-
 						var matrixData:Array<Float> = __getMatrix(renderTransform, bitmap.pixelSnapping);
 
 						// TODO: Remove hackky solution revert scrollRect solution, DisplayObject.__updateTransforms
@@ -770,7 +757,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 							// Use 16 instead of matrixData.length to help compiler optimization
 							for(i in 0...16)
 							{
-								__vertexBufferData[index + 15 + i] = matrixData[i];
+								//__vertexBufferData[index + 15 + i] = matrixData[i];
 								__vertexBufferData[index + dataPerVertex * v + 15 + i] = matrixData[i];
 							}
 						}
