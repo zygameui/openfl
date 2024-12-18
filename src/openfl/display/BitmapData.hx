@@ -197,6 +197,13 @@ class BitmapData implements IBitmapDrawable
 	**/
 	public var width(default, null):Int;
 
+	#if openfl_experimental_multitexture
+	/**
+		Allows multiple bitmapData to be drawn with a single draw call.
+	**/
+	public static var multiTextureEnabled:Bool;
+	#end
+
 	@:noCompletion private var __blendMode:BlendMode;
 	@:noCompletion private var __drawableType:IBitmapDrawableType;
 	// @:noCompletion private var __vertexBufferColorTransform:ColorTransform;

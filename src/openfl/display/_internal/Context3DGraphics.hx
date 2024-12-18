@@ -518,6 +518,11 @@ class Context3DGraphics
 		else
 		{
 			renderer.begin();
+
+			if(graphics.__bitmap != null && @:privateAccess graphics.__bitmap.__texture != null)
+			{
+				@:privateAccess graphics.__bitmap.__texture.dispose();
+			}
 			graphics.__bitmap = null;
 
 			#if (openfl_disable_hdpi || openfl_disable_hdpi_graphics)

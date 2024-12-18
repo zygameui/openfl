@@ -218,6 +218,7 @@ class Shader
 	@:noCompletion private var __colorOffset:ShaderParameter<Float>;
 	#if openfl_experimental_multitexture
 	@:noCompletion private var __textureId:ShaderParameter<Float>;
+	@:noCompletion private var __textureSmoothing:ShaderParameter<Float>;
 	@:noCompletion private var __multiTextureColorTransform:ShaderParameter<Float>;
 	@:noCompletion private var __matrixRow0:ShaderParameter<Float>;
 	@:noCompletion private var __matrixRow1:ShaderParameter<Float>;

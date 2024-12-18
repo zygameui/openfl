@@ -2134,11 +2134,12 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 				//trace("RENDER START");
 				__renderer.__render(this);
-				cast(__renderer, OpenGLRenderer).begin();
+				/*if(renderer.__type == OPENGL)
+				{
+					var openGLRenderer:OpenGLRenderer = cast __renderer;
+					openGLRenderer.begin();
+				}*/
 				//trace("RENDER END");
-				// #if gl_stats
-				// trace('Draw Call Count: ${Context3DStats.contextDrawCalls(DrawCallContext.STAGE)}');
-				// #end
 			}
 			else if (context3D == null)
 			{

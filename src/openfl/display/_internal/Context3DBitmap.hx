@@ -30,14 +30,12 @@ class Context3DBitmap
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid)
 		{
 			#if openfl_experimental_multitexture
-			var allowedToMultiRender:Bool = eligableForMultiTexture(bitmap, renderer);
-			if(allowedToMultiRender)
+			if(eligableForMultiTexture(bitmap, renderer))
 			{
 				renderer.__bitmapRenderPool.push(bitmap);
 			}else #end {
 				renderer.begin();
 
-				var context = renderer.__context3D;
 				flush(bitmap, renderer);
 			}
 
@@ -47,7 +45,7 @@ class Context3DBitmap
 	#if openfl_experimental_multitexture
 	public static inline function eligableForMultiTexture(bitmap:Bitmap, renderer:OpenGLRenderer):Bool
 	{
-		return bitmap.__worldShader == null && bitmap.__mask == null && bitmap.__scrollRect == null && bitmap.__blendMode == NORMAL;
+		return BitmapData.multiTextureEnabled && bitmap.__worldShader == null && bitmap.__mask == null && bitmap.__scrollRect == null && bitmap.__blendMode == NORMAL;
 	}
 	#end
 
@@ -79,7 +77,8 @@ class Context3DBitmap
 		renderer.applyAlpha(bitmap.__worldAlpha);
         renderer.applyColorTransform(bitmap.__worldColorTransform);
 		#if openfl_experimental_multitexture
-		renderer.applyTextureId(textureId);
+		if(isMultiTexture)
+			renderer.applyTextureId(textureId);
 		#end
         renderer.updateShader();
 		#if openfl_experimental_multitexture
@@ -90,14 +89,15 @@ class Context3DBitmap
 			if (shader.__position != null) context.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_2); // 0x00 - 0x02
 			if (shader.__textureCoord != null) context.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 2, FLOAT_2); // 0x03 - 0x04
 			if (shader.__textureId != null) context.setVertexBufferAt(shader.__textureId.index, vertexBuffer, 4, FLOAT_1);
-			if (shader.__alpha != null) context.setVertexBufferAt(shader.__alpha.index, vertexBuffer, 5, FLOAT_1); // 0x03 - 0x04
-			if (shader.__multiTextureColorTransform != null) context.setVertexBufferAt(shader.__multiTextureColorTransform.index, vertexBuffer, 6, FLOAT_1);
-			if (shader.__colorMultiplier != null) context.setVertexBufferAt(shader.__colorMultiplier.index, vertexBuffer, 7, FLOAT_4);
-			if (shader.__colorOffset != null) context.setVertexBufferAt(shader.__colorOffset.index, vertexBuffer, 11, FLOAT_4);
-			if (shader.__matrixRow0 != null) context.setVertexBufferAt(shader.__matrixRow0.index, vertexBuffer, 15, FLOAT_4);
-			if (shader.__matrixRow1 != null) context.setVertexBufferAt(shader.__matrixRow1.index, vertexBuffer, 19, FLOAT_4);
-			if (shader.__matrixRow2 != null) context.setVertexBufferAt(shader.__matrixRow2.index, vertexBuffer, 23, FLOAT_4);
-			if (shader.__matrixRow3 != null) context.setVertexBufferAt(shader.__matrixRow3.index, vertexBuffer, 27, FLOAT_4);
+			if (shader.__textureSmoothing != null) context.setVertexBufferAt(shader.__textureSmoothing.index, vertexBuffer, 5, FLOAT_1);
+			if (shader.__alpha != null) context.setVertexBufferAt(shader.__alpha.index, vertexBuffer, 6, FLOAT_1); // 0x03 - 0x04
+			if (shader.__multiTextureColorTransform != null) context.setVertexBufferAt(shader.__multiTextureColorTransform.index, vertexBuffer, 7, FLOAT_1);
+			if (shader.__colorMultiplier != null) context.setVertexBufferAt(shader.__colorMultiplier.index, vertexBuffer, 8, FLOAT_4);
+			if (shader.__colorOffset != null) context.setVertexBufferAt(shader.__colorOffset.index, vertexBuffer, 12, FLOAT_4);
+			if (shader.__matrixRow0 != null) context.setVertexBufferAt(shader.__matrixRow0.index, vertexBuffer, 16, FLOAT_4);
+			if (shader.__matrixRow1 != null) context.setVertexBufferAt(shader.__matrixRow1.index, vertexBuffer, 20, FLOAT_4);
+			if (shader.__matrixRow2 != null) context.setVertexBufferAt(shader.__matrixRow2.index, vertexBuffer, 24, FLOAT_4);
+			if (shader.__matrixRow3 != null) context.setVertexBufferAt(shader.__matrixRow3.index, vertexBuffer, 28, FLOAT_4);
 
 			context.drawTriangles(context.__quadIndexBuffer, 0, length * 2);
 		}else #end {
@@ -125,7 +125,7 @@ class Context3DBitmap
 
 	public static function renderDrawable(bitmap:Bitmap, renderer:OpenGLRenderer):Void
 	{
-		var cacheUpdated:Bool = renderer.__updateCacheBitmap(bitmap, false);
+		renderer.__updateCacheBitmap(bitmap, false);
 
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.image != null)
 		{
@@ -141,9 +141,6 @@ class Context3DBitmap
 			Context3DDisplayObject.render(bitmap, renderer, false);
 			Context3DBitmap.render(bitmap, renderer);
 		}
-
-		if(false)
-			renderer.begin();
 
 		renderer.__renderEvent(bitmap);
 	}
