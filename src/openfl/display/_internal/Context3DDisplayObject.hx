@@ -20,7 +20,7 @@ import lime.math.ARGB;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class Context3DDisplayObject
 {
-	public static inline function render(displayObject:DisplayObject, renderer:OpenGLRenderer):Void
+	public static inline function render(displayObject:DisplayObject, renderer:OpenGLRenderer, cacheUpdated:Bool = false):Void
 	{
 		if (displayObject.opaqueBackground == null && displayObject.__graphics == null) return;
 		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
@@ -58,7 +58,6 @@ class Context3DDisplayObject
 
 	public static function renderDrawable(displayObject:DisplayObject, renderer:OpenGLRenderer):Void
 	{
-		//renderer.begin();
 		renderer.__updateCacheBitmap(displayObject, false);
 
 		if (displayObject.__cacheBitmap != null && !displayObject.__isCacheBitmapRender)
@@ -67,7 +66,6 @@ class Context3DDisplayObject
 		}
 		else
 		{
-			//renderer.begin();
 			Context3DDisplayObject.render(displayObject, renderer);
 		}
 

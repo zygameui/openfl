@@ -17,7 +17,6 @@ class Context3DTextField
 {
 	public static function render(textField:TextField, renderer:OpenGLRenderer):Void
 	{
-		//renderer.begin();
 		renderer.__softwareRenderer.__pixelRatio = renderer.__pixelRatio;
 
 		#if (js && html5)
@@ -30,7 +29,6 @@ class Context3DTextField
 
 	public static function renderDrawable(textField:TextField, renderer:OpenGLRenderer):Void
 	{
-		//renderer.begin();
 		renderer.__updateCacheBitmap(textField, false);
 
 		if (textField.__cacheBitmap != null && !textField.__isCacheBitmapRender)

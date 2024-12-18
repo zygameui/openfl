@@ -27,7 +27,6 @@ import lime.graphics.cairo.Cairo;
 import js.html.CanvasElement;
 import js.html.CanvasRenderingContext2D;
 import js.html.CSSStyleDeclaration;
-import openfl.display._internal.Context3DBitmap;
 #end
 
 /**
@@ -2017,7 +2016,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 	@:noCompletion private function set_filters(value:Array<BitmapFilter>):Array<BitmapFilter>
 	{
-		return [];
 		if (value != null && value.length > 0)
 		{
 			var clonedFilters:Array<BitmapFilter> = [];

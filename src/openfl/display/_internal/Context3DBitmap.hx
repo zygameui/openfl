@@ -30,7 +30,7 @@ class Context3DBitmap
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid)
 		{
 			#if openfl_experimental_multitexture
-			var allowedToMultiRender:Bool = eligableForMultiTexture(bitmap);
+			var allowedToMultiRender:Bool = eligableForMultiTexture(bitmap, renderer);
 			if(allowedToMultiRender)
 			{
 				renderer.__bitmapRenderPool.push(bitmap);
@@ -45,9 +45,9 @@ class Context3DBitmap
 	}
 
 	#if openfl_experimental_multitexture
-	public static inline function eligableForMultiTexture(bitmap:Bitmap):Bool
+	public static inline function eligableForMultiTexture(bitmap:Bitmap, renderer:OpenGLRenderer):Bool
 	{
-		return bitmap.__filters == null && bitmap.__worldShader == null && bitmap.__mask == null && bitmap.scrollRect == null && bitmap.blendMode == NORMAL;
+		return bitmap.__worldShader == null && bitmap.__mask == null && bitmap.__scrollRect == null && bitmap.__blendMode == NORMAL;
 	}
 	#end
 
@@ -125,7 +125,7 @@ class Context3DBitmap
 
 	public static function renderDrawable(bitmap:Bitmap, renderer:OpenGLRenderer):Void
 	{
-		renderer.__updateCacheBitmap(bitmap, false);
+		var cacheUpdated:Bool = renderer.__updateCacheBitmap(bitmap, false);
 
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.image != null)
 		{
@@ -138,9 +138,12 @@ class Context3DBitmap
 		}
 		else
 		{
-			Context3DDisplayObject.render(bitmap, renderer);
+			Context3DDisplayObject.render(bitmap, renderer, false);
 			Context3DBitmap.render(bitmap, renderer);
 		}
+
+		if(false)
+			renderer.begin();
 
 		renderer.__renderEvent(bitmap);
 	}

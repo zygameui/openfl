@@ -93,7 +93,6 @@ class Bitmap extends DisplayObject
 	**/
 	public var smoothing:Bool;
 
-
 	public var multiTextureIndex:Int;
 
 	public var multiTextureId:Int;

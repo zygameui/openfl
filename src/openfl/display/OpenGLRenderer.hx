@@ -1086,7 +1086,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 	@:noCompletion private override function __render(object:IBitmapDrawable):Void
 	{
-		begin();
+		//begin();
 
 		__context3D.setColorMask(true, true, true, true);
 		__context3D.setCulling(NONE);
@@ -1188,6 +1188,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			object.__scrollRect = null;
 
 			__renderDrawable(object);
+			begin();
 
 			object.__mask = cacheMask;
 			object.__scrollRect = cacheScrollRect;
@@ -1263,7 +1264,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		if (source == null || shader == null) return;
 		if (__defaultRenderTarget == null) return;
 
-		begin();
+		//begin();
 
 		var cacheRTT = __context3D.__state.renderToTexture;
 		var cacheRTTDepthStencil = __context3D.__state.renderToTextureDepthStencil;

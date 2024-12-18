@@ -62,7 +62,6 @@ class Context3DShape
 				bitmap.__renderable = shape.__renderable;
 
 				Context3DBitmap.render(bitmap, renderer);
-				//renderer.begin();
 			}
 
 			// renderer.filterManager.popObject (shape);
