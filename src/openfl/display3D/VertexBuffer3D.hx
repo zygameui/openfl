@@ -60,7 +60,7 @@ class VertexBuffer3D
 	@:noCompletion private var __tempFloat32Array:Float32Array;
 	@:noCompletion private var __usage:Int;
 	@:noCompletion private var __vertexSize:Int;
-	@:noCompletion private var __byteLength:Int;
+	@:noCompletion private var __byteLength:Int = 0;
 
 	@:noCompletion private function new(context3D:Context3D, numVertices:Int, dataPerVertex:Int, bufferUsage:String)
 	{
