@@ -83,7 +83,6 @@ class VertexBuffer3D
 	{
 		var gl = __context.gl;
 		gl.deleteBuffer(__id);
-		__byteLength = 0;
 	}
 
 	/**
@@ -131,15 +130,7 @@ class VertexBuffer3D
 		var gl = __context.gl;
 
 		__context.__bindGLArrayBuffer(__id);
-		if (__byteLength != data.byteLength)
-		{
-			gl.bufferData(gl.ARRAY_BUFFER, data, __usage);
-			__byteLength = data.byteLength;
-		}
-		else
-		{
-			gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
-		}
+		__byteLength = data.byteLength;
 	}
 
 	/**
