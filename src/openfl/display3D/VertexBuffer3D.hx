@@ -60,6 +60,7 @@ class VertexBuffer3D
 	@:noCompletion private var __tempFloat32Array:Float32Array;
 	@:noCompletion private var __usage:Int;
 	@:noCompletion private var __vertexSize:Int;
+	@:noCompletion private var __byteLength:Int = 0;
 
 	@:noCompletion private function new(context3D:Context3D, numVertices:Int, dataPerVertex:Int, bufferUsage:String)
 	{
@@ -82,7 +83,7 @@ class VertexBuffer3D
 	{
 		var gl = __context.gl;
 		gl.deleteBuffer(__id);
-
+		__byteLength = 0;
 	}
 
 	/**
@@ -130,7 +131,15 @@ class VertexBuffer3D
 		var gl = __context.gl;
 
 		__context.__bindGLArrayBuffer(__id);
-		gl.bufferData(gl.ARRAY_BUFFER, data, __usage);
+		if (__byteLength != data.byteLength)
+		{
+			gl.bufferData(gl.ARRAY_BUFFER, data, __usage);
+			__byteLength = data.byteLength;
+		}
+		else
+		{
+			gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+		}
 	}
 
 	/**
