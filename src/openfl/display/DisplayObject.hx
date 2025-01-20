@@ -647,7 +647,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	**/
 	// @:noCompletion @:dox(hide) @:require(flash10) public var rotationX:Float;
 	#end
-
 	#if false
 	/**
 		Indicates the y-axis rotation of the DisplayObject instance, in degrees, from its original orientation
@@ -657,7 +656,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	**/
 	// @:noCompletion @:dox(hide) @:require(flash10) public var rotationY:Float;
 	#end
-
 	#if false
 	/**
 		Indicates the z-axis rotation of the DisplayObject instance, in degrees, from its original orientation
@@ -1971,15 +1969,15 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		if (value != null && value.length > 0)
 		{
 			var clonedFilters:Array<BitmapFilter> = [];
-			
+
 			for (filter in value)
 			{
 				var clonedFilter:BitmapFilter = filter.clone();
-				
+
 				clonedFilter.__renderDirty = true;
-				clonedFilters.push(clonedFilter);				
+				clonedFilters.push(clonedFilter);
 			}
-			
+
 			__filters = clonedFilters;
 			// __updateFilters = true;
 			__setRenderDirty();
@@ -1990,7 +1988,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			// __updateFilters = false;
 			__setRenderDirty();
 		}
-		
+
 		return value;
 	}
 
