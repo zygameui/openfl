@@ -112,6 +112,10 @@ import openfl.display._internal.stats.DrawCallContext;
 	@see `openfl.display.Graphics.beginBitmapFill()`
 	@see `openfl.display.Graphics.lineBitmapStyle()`
 **/
+#if !openfl_debug
+@:fileXml('tags="haxe,release"')
+@:noDebug
+#end
 @:access(lime.graphics.opengl.GL)
 @:access(lime.graphics.Image)
 @:access(lime.graphics.ImageBuffer)
@@ -127,9 +131,6 @@ import openfl.display._internal.stats.DrawCallContext;
 @:access(openfl.geom.Matrix)
 @:access(openfl.geom.Point)
 @:access(openfl.geom.Rectangle)
-#if !openfl_debug
-@:fileXml('tags="haxe,release"') @:noDebug
-#end
 @:autoBuild(openfl.utils._internal.AssetsMacro.embedBitmap())
 class BitmapData implements IBitmapDrawable
 {
