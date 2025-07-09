@@ -68,7 +68,7 @@ class CairoTextField
 						cursorOffsetX += textField.defaultTextFormat.indent;
 						cursorOffsetX += textField.defaultTextFormat.blockIndent;
 					case START:
-					// not supported?
+						// not supported?
 					case JUSTIFY:
 						cursorOffsetX += textField.defaultTextFormat.leftMargin;
 						cursorOffsetX += textField.defaultTextFormat.indent;
@@ -153,8 +153,10 @@ class CairoTextField
 			graphics.__managed = true;
 
 			#if zygameui
-			if(graphics.__bitmap != null)
-				graphics.__bitmap.dispose();
+			if (graphics.__bitmap != null)
+			{
+				if (graphics.__bitmap.__texture != null) graphics.__bitmap.__texture.dispose();
+			}
 			#end
 			graphics.__bitmap = bitmap;
 			graphics.__bitmapScale = pixelRatio;

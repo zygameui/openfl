@@ -733,23 +733,23 @@ class BitmapData implements IBitmapDrawable
 	**/
 	public function dispose():Void
 	{
-		// #if (js && html5)
-		// if (image != null && image.type == CANVAS) {
-		// 	var canvas = image.buffer.__srcCanvas;
-		// 	var context = image.buffer.__srcContext;
+		#if (js && html5)
+		if (image != null && image.type == CANVAS) {
+			var canvas = image.buffer.__srcCanvas;
+			var context = image.buffer.__srcContext;
 
-		// 	if (canvas != null) {
-		// 		canvas.width = 0;
-		// 		canvas.height = 0;
-		// 		canvas = null;
-		// 	}
+			if (canvas != null) {
+				canvas.width = 0;
+				canvas.height = 0;
+				canvas = null;
+			}
 
-		// 	if (context != null) {
-		// 		context.clearRect(0, 0, 0, 0);
-		// 		context = null;
-		// 	}
-		// }
-		// #end
+			if (context != null) {
+				context.clearRect(0, 0, 0, 0);
+				context = null;
+			}
+		}
+		#end
 
 		#if (html5 && zygameui)
 		// 微信小游戏卸载内存使用
