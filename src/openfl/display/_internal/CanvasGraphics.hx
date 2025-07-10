@@ -536,28 +536,8 @@ class CanvasGraphics
 
 		var data = new DrawCommandReader(commands);
 
-		var x,
-			y,
-			width,
-			height,
-			kappa = .5522848,
-			ox,
-			oy,
-			xe,
-			ye,
-			xm,
-			ym,
-			r,
-			g,
-			b;
-		var optimizationUsed,
-			canOptimizeMatrix,
-			st:Float,
-			sr:Float,
-			sb:Float,
-			sl:Float,
-			stl = null,
-			sbr = null;
+		var x, y, width, height, kappa = .5522848, ox, oy, xe, ye, xm, ym, r, g, b;
+		var optimizationUsed, canOptimizeMatrix, st:Float, sr:Float, sb:Float, sl:Float, stl = null, sbr = null;
 
 		for (type in commands.types)
 		{
@@ -1177,7 +1157,7 @@ class CanvasGraphics
 				#if zygameui
 				if (graphics.__bitmap != null)
 				{
-					graphics.__bitmap.dispose();
+					if (@:privateAccess graphics.__bitmap.__texture != null) @:privateAccess graphics.__bitmap.__texture.dispose();
 				}
 				graphics.__bitmap = null;
 				#else
@@ -1472,7 +1452,10 @@ class CanvasGraphics
 
 				data.destroy();
 				#if zygameui
-				if (graphics.__bitmap != null) graphics.__bitmap.dispose();
+				if (graphics.__bitmap != null)
+				{
+					if (@:privateAccess graphics.__bitmap.__texture != null) @:privateAccess graphics.__bitmap.__texture.dispose();
+				}
 				#end
 				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
 			}

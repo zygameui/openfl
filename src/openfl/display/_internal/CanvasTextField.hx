@@ -115,7 +115,7 @@ class CanvasTextField
 				#if zygameui
 				if (textField.__graphics.__bitmap != null)
 				{
-					textField.__graphics.__bitmap.dispose();
+					if (@:privateAccess textField.__graphics.__bitmap.__texture != null) @:privateAccess textField.__graphics.__bitmap.__texture.dispose();
 				}
 				textField.__graphics.__bitmap = null;
 				#else

@@ -1614,7 +1614,7 @@ import js.html.CanvasRenderingContext2D;
 
 		#if zygameui
 		if(__bitmap != null){
-			__bitmap.dispose();
+			if (@:privateAccess __bitmap.__texture != null) @:privateAccess __bitmap.__texture.dispose();
 		}
 		__bitmap = null;
 		#else
