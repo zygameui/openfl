@@ -72,16 +72,8 @@ class Context3DTilemap
 		if (tilemap.tileAlphaEnabled) dataPerVertex++;
 		if (tilemap.tileColorTransformEnabled) dataPerVertex += 8;
 
-		if (vertexBufferData == null || tilemap.__group.__dirty || tilemap.__renderWorldAlpha != tilemap.__worldAlpha)
-		{
-			tilemap.__renderWorldAlpha = tilemap.__worldAlpha;
-			buildBufferTileContainer(tilemap, tilemap.__group, renderer, parentTransform, tilemap.__tileset, tilemap.tileAlphaEnabled, tilemap.__worldAlpha,
-				tilemap.tileColorTransformEnabled, tilemap.__worldColorTransform, null, rect, matrix);
-		}
-		else
-		{
-			resizeBuffer(tilemap, tilemap.__numTiles);
-		}
+		buildBufferTileContainer(tilemap, tilemap.__group, renderer, parentTransform, tilemap.__tileset, tilemap.tileAlphaEnabled, tilemap.__worldAlpha,
+			tilemap.tileColorTransformEnabled, tilemap.__worldColorTransform, null, rect, matrix);
 
 		tilemap.__buffer.flushVertexBufferData();
 
@@ -547,7 +539,11 @@ class Context3DTilemap
 					if (tileData == null) continue;
 				}
 
-				if ((shader != currentShader)
+				var numBuffer:Int = bufferPosition - lastFlushedPosition;
+				var forceFlush:Bool = numBuffer >= 16383;
+
+				if ((forceFlush)
+					|| (shader != currentShader)
 					|| (bitmapData != currentBitmapData && currentBitmapData != null)
 					|| (currentBlendMode != blendMode))
 				{
@@ -649,8 +645,6 @@ class Context3DTilemap
 	private static function resizeBuffer(tilemap:Tilemap, count:Int):Void
 	{
 		numTiles = count;
-
-		tilemap.__numTiles = numTiles;
 
 		if (tilemap.__buffer == null)
 		{

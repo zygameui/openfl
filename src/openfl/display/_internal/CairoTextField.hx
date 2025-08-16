@@ -155,7 +155,8 @@ class CairoTextField
 			graphics.__managed = true;
 
 			graphics.__bitmap = bitmap;
-			graphics.__bitmapScale = pixelRatio;
+			graphics.__bitmapScaleX = pixelRatio;
+			graphics.__bitmapScaleY = pixelRatio;
 
 			cairo = graphics.__cairo;
 
@@ -417,6 +418,18 @@ class CairoTextField
 						var descent = Math.floor(group.ascent * 0.185);
 						var x = group.offsetX + scrollX - bounds.x;
 						var y = Math.ceil(group.offsetY + scrollY + group.ascent - bounds.y) + descent + 0.5;
+						cairo.moveTo(x, y);
+						cairo.lineTo(x + group.width, y);
+						cairo.stroke();
+						cairo.closePath();
+					}
+
+					if (group.format.strikethrough)
+					{
+						cairo.newPath();
+						cairo.lineWidth = 1;
+						var x = group.offsetX + scrollX - bounds.x;
+						var y = Math.ceil(group.offsetY + scrollY + 2.0 * group.ascent / 3.0 - bounds.y);
 						cairo.moveTo(x, y);
 						cairo.lineTo(x + group.width, y);
 						cairo.stroke();

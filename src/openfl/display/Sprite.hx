@@ -55,19 +55,19 @@ class Sprite extends DisplayObjectContainer
 		Although it is better to use the SimpleButton class to create buttons,
 		you can use the `buttonMode` property to give a sprite some
 		button-like functionality. To include a sprite in the tab order, set the
-		`tabEnabled` property(inherited from the InteractiveObject
+		`tabEnabled` property (inherited from the InteractiveObject
 		class and `false` by default) to `true`.
 		Additionally, consider whether you want the children of your sprite to be
 		user input enabled. Most buttons do not enable user input interactivity
 		for their child objects because it confuses the event flow. To disable
 		user input interactivity for all child objects, you must set the
-		`mouseChildren` property(inherited from the
+		`mouseChildren` property (inherited from the
 		DisplayObjectContainer class) to `false`.
 
 		If you use the `buttonMode` property with the MovieClip
-		class(which is a subclass of the Sprite class), your button might have
+		class (which is a subclass of the Sprite class), your button might have
 		some added functionality. If you include frames labeled _up, _over, and
-		_down, Flash Player provides automatic state changes(functionality
+		_down, Flash Player provides automatic state changes (functionality
 		similar to that provided in previous versions of ActionScript for movie
 		clips used as buttons). These automatic state changes are not available
 		for sprites, which have no timeline, and thus no frames to label.
@@ -306,10 +306,6 @@ class Sprite extends DisplayObjectContainer
 	@:noCompletion private override function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
 			hitObject:DisplayObject):Bool
 	{
-		// ZYGAMEUI 不兼容shapeFlag避免无法触摸
-		#if unshape_flag
-		shapeFlag = false;
-		#end
 		if (interactiveOnly && !mouseEnabled && !mouseChildren) return false;
 		if (!hitObject.visible || __isMask) return __hitTestHitArea(x, y, shapeFlag, stack, interactiveOnly, hitObject);
 		if (mask != null && !mask.__hitTestMask(x, y)) return __hitTestHitArea(x, y, shapeFlag, stack, interactiveOnly, hitObject);

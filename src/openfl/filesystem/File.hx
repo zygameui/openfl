@@ -12,6 +12,7 @@ import openfl.events.IOErrorEvent;
 import openfl.net.FileFilter;
 import openfl.events.FileListEvent;
 import openfl.net.FileReference;
+import openfl.utils.ByteArray;
 import sys.FileSystem;
 import sys.io.Process;
 #if (lime && !macro)
@@ -394,7 +395,7 @@ class File extends FileReference
 	// TODO
 	// public static var systemCharset:String;
 	// TODO: platorm specific code?
-	public var url(get, never):String;
+	public var url(get, set):String;
 
 	/**
 		The user's directory.
@@ -424,6 +425,50 @@ class File extends FileReference
 	**/
 	public static var userDirectory(get, never):File;
 
+	/**
+	 * Reads the contents of a file as a `ByteArray`.
+	 *
+	 * @param path The path to the file.
+	 * @return A `ByteArray` containing the file's contents.
+	 */
+	public static inline function getFileBytes(path:String):ByteArray
+	{
+		return HaxeFile.getBytes(path);
+	}
+
+	/**
+	 * Reads the contents of a file as a `String`.
+	 *
+	 * @param path The path to the file.
+	 * @return A `String` containing the file's contents.
+	 */
+	public static inline function getFileText(path:String):String
+	{
+		return HaxeFile.getContent(path);
+	}
+
+	/**
+	 * Saves a `ByteArray` to a file.
+	 *
+	 * @param path The path where the file should be saved.
+	 * @param bytes The `ByteArray` to write to the file.
+	 */
+	public static inline function saveBytes(path:String, bytes:ByteArray):Void
+	{
+		HaxeFile.saveBytes(path, bytes);
+	}
+
+	/**
+	 * Saves a `String` as a text file.
+	 *
+	 * @param path The path where the file should be saved.
+	 * @param text The `String` content to write to the file.
+	 */
+	public static inline function saveText(path:String, text:String):Void
+	{
+		HaxeFile.saveContent(path, text);
+	}
+
 	@:noCompletion private static var __driveLetters:Array<String> =
 		#if windows
 		[
@@ -439,7 +484,6 @@ class File extends FileReference
 
 	@:noCompletion private var __fileDialog:#if (lime && !macro) FileDialog #else Dynamic #end;
 	@:noCompletion private var __fileWorker:BackgroundWorker;
-	@:noCompletion private var __sep:String = #if windows "\\" #else "/" #end;
 	@:noCompletion private var __fileStatsDirty:Bool = false;
 
 	/**
@@ -483,7 +527,7 @@ class File extends FileReference
 
 		if (name.length == 0)
 		{
-			var dirs:Array<String> = Path.directory(__path).split(__sep);
+			var dirs:Array<String> = Path.directory(__path).split(separator);
 			name = dirs[dirs.length - 1];
 		}
 	}
@@ -775,20 +819,20 @@ class File extends FileReference
 	**/
 	public function canonicalize():Void
 	{
-		var segs:Array<String> = __path.split(__sep);
+		var segs:Array<String> = __path.split(separator);
 
-		var cPath:String = __driveLetters[__driveLetters.indexOf(segs[0].toUpperCase() + __sep)];
+		var cPath:String = __driveLetters[__driveLetters.indexOf(segs[0].toUpperCase() + separator)];
 		var start:Int = 1;
 		if (cPath == null)
 		{
 			// fall back to unix paths
-			cPath = __sep + segs[1] + __sep;
+			cPath = separator + segs[1] + separator;
 			start = 2;
 		}
 
 		for (i in start...segs.length)
 		{
-			cPath += __canonicalize(cPath, segs[i]) + __sep;
+			cPath += __canonicalize(cPath, segs[i]) + separator;
 		}
 
 		__path = Path.removeTrailingSlashes(cPath);
@@ -914,7 +958,7 @@ class File extends FileReference
 				for (file in files)
 				{
 					var newFile = new File(Path.join([newPath, file.name]));
-					file.copyTo(newFile);
+					file.copyTo(newFile, overwrite);
 				}
 			}
 			else
@@ -1153,9 +1197,9 @@ class File extends FileReference
 	/**
 		Deletes the file.
 
-		@throws	IOError The directory does not exist, or the directory could not be deleted. On Windows, you
-		cannot delete a directory that contains a file that is open.
-		@throws SecurityError The application does not have the necessary permissions to delete the directory.
+		@throws	IOError The file does not exist, or could not be deleted. On Windows, you
+		cannot delete a file that is currently open.
+		@throws SecurityError The application does not have the necessary permissions to delete the file.
 
 		The following code creates a temporary file and then calls the deleteFile() method to delete it.
 
@@ -1178,10 +1222,10 @@ class File extends FileReference
 	/**
 		Deletes the file asynchronously.
 
-		@event complete Dispatched when the directory has been deleted successfully.
-		@event ioError The directory does not exist or could not be deleted. On Windows, you cannot delete a
-		directory that contains a file that is open.
-		@throws SecurityError The application does not have the necessary permissions to delete the directory.
+		@event complete Dispatched when the file has been deleted successfully.
+		@event ioError The file does not exist or could not be deleted. On Windows, you cannot delete a
+		a file that is currently open.
+		@throws SecurityError The application does not have the necessary permissions to delete the file.
 
 		@see [Working with files](https://books.openfl.org/openfl-developers-guide/working-with-the-file-system/working-with-files.html)
 	**/
@@ -1253,13 +1297,31 @@ class File extends FileReference
 			throw new Error("Not a directory.", 3007);
 		}
 
-		var directories:Array<String> = FileSystem.readDirectory(__path);
+		var fileNames:Array<String> = FileSystem.readDirectory(__path);
 		var files:Array<File> = [];
 
-		for (directory in directories)
+		#if windows
+		for (fileName in fileNames)
 		{
-			files.push(new File(__path + __sep + directory));
+			files.push(new File(__path + separator + fileName));
 		}
+		#else
+		if (__path == separator)
+		{
+			for (fileName in fileNames)
+			{
+				// avoid double // when listing unix root
+				files.push(new File(separator + fileName));
+			}
+		}
+		else
+		{
+			for (fileName in fileNames)
+			{
+				files.push(new File(__path + separator + fileName));
+			}
+		}
+		#end
 
 		return files;
 	}
@@ -1314,10 +1376,10 @@ class File extends FileReference
 		});
 		__fileWorker.doWork.add(function(m:Dynamic)
 		{
-			var directories:Array<String> = null;
+			var fileNames:Array<String> = null;
 			try
 			{
-				directories = FileSystem.readDirectory(__path);
+				fileNames = FileSystem.readDirectory(__path);
 			}
 			catch (e:Dynamic)
 			{
@@ -1333,10 +1395,29 @@ class File extends FileReference
 				return;
 			}
 			var files:Array<File> = [];
-			for (directory in directories)
+
+			#if windows
+			for (fileName in fileNames)
 			{
-				files.push(new File(__path + __sep + directory));
+				files.push(new File(__path + separator + fileName));
 			}
+			#else
+			if (__path == separator)
+			{
+				for (fileName in fileNames)
+				{
+					// avoid double // when listing unix root
+					files.push(new File(separator + fileName));
+				}
+			}
+			else
+			{
+				for (fileName in fileNames)
+				{
+					files.push(new File(__path + separator + fileName));
+				}
+			}
+			#end
 			// don't dispatch events directly from doWork because the listeners
 			// will be called in the wrong thread
 			__fileWorker.sendComplete(new FileListEvent(FileListEvent.DIRECTORY_LISTING, files));
@@ -1456,7 +1537,7 @@ class File extends FileReference
 
 		for (k in 0...relatives.length)
 		{
-			relativePath += relatives[k] + (k != relatives.length - 1 || refPath.length == 1 ? __sep : "");
+			relativePath += relatives[k] + (k != relatives.length - 1 || refPath.length == 1 ? separator : "");
 		}
 
 		return relativePath == "" && ref.__path != __path ? null : relativePath;
@@ -1656,7 +1737,7 @@ class File extends FileReference
 	public function resolvePath(path:String):File
 	{
 		var directoryPath:String = Path.removeTrailingSlashes(__path);
-		return new File('$directoryPath$__sep$path');
+		return new File('$directoryPath$separator$path');
 	}
 
 	/**
@@ -1709,7 +1790,7 @@ class File extends FileReference
 		trace(temp.nativePath);
 		```
 
-		@returns File A File object referencing the new temporary file;		
+		@returns File A File object referencing the new temporary file;
 
 		@see [Working with files](https://books.openfl.org/openfl-developers-guide/working-with-the-file-system/working-with-files.html)
 	**/
@@ -1740,7 +1821,7 @@ class File extends FileReference
 		}
 		```
 
-		@returns Array An array of File objects, listing the root directories.		
+		@returns Array An array of File objects, listing the root directories.
 	**/
 	public static function getRootDirectories():Array<File>
 	{
@@ -1757,19 +1838,43 @@ class File extends FileReference
 
 	@:noCompletion private function __canonicalize(cpath:String, seg:String):String
 	{
-		seg = seg.toLowerCase();
-		var items:Array<String> = FileSystem.readDirectory(Path.directory(cpath));
+		var items:Array<String> = null;
+		try
+		{
+			items = FileSystem.readDirectory(Path.directory(cpath));
+		}
+		catch (e:Dynamic) {}
 		if (items == null)
 		{
-			return "";
+			// if the directory doesn't exist, or if something goes wrong, like
+			// we don't have permission to read it, use the original name.
+			return seg;
 		}
+
+		// we're using toLowerCase() for comparisons only.
+		// we'll return the original casing if the file doesn't exist.
+		var segLower = seg.toLowerCase();
 		for (item in items)
 		{
-			if (item.toLowerCase() == seg)
+			#if (windows || mac || ios)
+			if (item.toLowerCase() == segLower)
 			{
-				seg = item;
-				break;
+				// generally, file systems on Windows and macOS are not
+				// case-sensitive, but file systems on Linux are.
+				// technically, Windows and macOS file systems (or, sometimes,
+				// individual directories) can be configured to be
+				// case-sensitive, but that's rare.
+				// ideally, we should detect case-sensitivity, instead of
+				// assuming, but this is good enough for now.
+				return item;
 			}
+			#else
+			if (item == seg)
+			{
+				// found an exact match for case-sensitive file systems
+				return item;
+			}
+			#end
 		}
 
 		return seg;
@@ -1858,7 +1963,7 @@ class File extends FileReference
 
 		for (dir in dirs)
 		{
-			path += '$dir$__sep';
+			path += '$dir$separator';
 		}
 
 		return Path.removeTrailingSlashes(path);
@@ -2034,7 +2139,7 @@ class File extends FileReference
 		return creationDate;
 	}
 
-	@:noCompletion private static function get_lineEnding():String
+	@:noCompletion private static inline function get_lineEnding():String
 	{
 		#if windows
 		return "\r\n";
@@ -2061,7 +2166,7 @@ class File extends FileReference
 		return name;
 	}
 
-	@:noCompletion private static function get_separator():String
+	@:noCompletion private inline static function get_separator():String
 	{
 		#if windows
 		return "\\";
@@ -2119,7 +2224,7 @@ class File extends FileReference
 				path = Path.addTrailingSlash(path);
 			}
 
-			if (Path.directory(path).length == 0)
+			if (#if !windows !StringTools.startsWith(path, "/") && #end Path.directory(path).length == 0)
 			{
 				throw new ArgumentError("One of the parameters is invalid.");
 			}
@@ -2140,6 +2245,47 @@ class File extends FileReference
 		// TODO: url encode the native path to avoid invalid URL characters
 		// TODO: use app: and app-storage: protocols instead of file:, when path is relative to those directories
 		return "file:///" + nativePath;
+	}
+
+	@:noCompletion private function set_url(value:String):String
+	{
+		if (value == null)
+		{
+			throw new ArgumentError("One of the parameters is invalid.");
+		}
+
+		var resolveFromDirectory:File = null;
+		var schemeRegex = ~/^(.+?):/;
+		if (schemeRegex.match(value))
+		{
+			var scheme = schemeRegex.matched(1);
+			if (scheme == "app")
+			{
+				resolveFromDirectory = File.applicationDirectory;
+			}
+			else if (scheme == "app-storage")
+			{
+				resolveFromDirectory = File.applicationStorageDirectory;
+			}
+			else if (scheme != "file")
+			{
+				throw new ArgumentError("One of the parameters is invalid.");
+			}
+		}
+
+		value = ~/^\/{2,}/.replace(value.substr(5), "/");
+		value = StringTools.urlDecode(value);
+
+		if (resolveFromDirectory != null)
+		{
+			nativePath = resolveFromDirectory.resolvePath(value).nativePath;
+		}
+		else
+		{
+			nativePath = value;
+		}
+
+		return url;
 	}
 
 	@:noCompletion private function get_exists():Bool
@@ -2167,8 +2313,8 @@ class File extends FileReference
 		// TODO:Can we optimize this?
 		var path:String = Path.removeTrailingSlashes(__path);
 
-		var lastIndex:Int = path.lastIndexOf(__sep);
-		if (lastIndex == path.indexOf(__sep))
+		var lastIndex:Int = path.lastIndexOf(separator);
+		if (lastIndex == path.indexOf(separator))
 		{
 			lastIndex += 1;
 		}
