@@ -165,9 +165,7 @@ abstract Vector<T>(IVector<T>)
 		@param	fixed	Whether the Vector's length is fixed (`true`) or can be changed
 		(`false`). This value can also be set using the fixed property.
 	**/
-	#if (zygame && mac)
-	public function new(length:Null<Int> = 0, fixed:Null<Bool> = false, array:Array<T> = null):Void;
-	#elseif !flash
+	#if !flash
 	public function new(length:Null<Int> = 0, fixed:Null<Bool> = false, array:Array<T> = null):Void;
 	#else
 	public function new(length:Null<Int> = 0, fixed:Null<Bool> = false, array:Array<T> = null):Void
