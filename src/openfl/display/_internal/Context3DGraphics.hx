@@ -258,8 +258,15 @@ class Context3DGraphics
 
 					// TODO: Use index buffer for indexed render
 
-					if (hasIndices) resizeIndexBuffer(graphics, false, triangleIndexBufferPosition + length);
-					resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (length * dataPerVertex));
+					if (hasIndices)
+					{
+						resizeIndexBuffer(graphics, false, triangleIndexBufferPosition + length);
+						resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (numVertices * dataPerVertex));
+					}
+					else
+					{
+						resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (length * dataPerVertex));
+					}
 
 					var indexBufferData = graphics.__triangleIndexBufferData;
 					var vertexBufferData = hasUVTData ? graphics.__vertexBufferDataUVT : graphics.__vertexBufferData;
