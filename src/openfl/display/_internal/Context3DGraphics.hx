@@ -280,8 +280,6 @@ class Context3DGraphics
 							vertOffset = hasIndices ? indices[i] * 2 : i * 2;
 							uvOffset = hasIndices ? indices[i] * uvStride : i * uvStride;
 
-							if (hasIndices) indexBufferData[triangleIndexBufferPosition + i] = indices[i];
-
 							if (hasUVTData)
 							{
 								t = uvtData[uvOffset + 2];
@@ -305,13 +303,13 @@ class Context3DGraphics
 					{
 						for (i in 0...length)
 						{
-							if (hasIndices) indexBufferData[triangleIndexBufferPosition + i] = indices[i];
+							indexBufferData[triangleIndexBufferPosition + i] = indices[i];
 						}
 						for (i in 0...numVertices)
 						{
 							offset = vertexOffset + (i * dataPerVertex);
-							vertOffset = hasIndices ? indices[i] * 2 : i * 2;
-							uvOffset = hasIndices ? indices[i] * uvStride : i * uvStride;
+							vertOffset = i * 2;
+							uvOffset = i * uvStride;
 
 							if (hasUVTData)
 							{
