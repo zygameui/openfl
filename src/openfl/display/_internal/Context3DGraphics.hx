@@ -52,6 +52,7 @@ class Context3DGraphics
 		var tileTransform = Matrix.__pool.get();
 
 		var bitmap = null;
+		var shaderBuffer = null;
 
 		for (type in graphics.__commands.types)
 		{
@@ -67,7 +68,7 @@ class Context3DGraphics
 
 				case BEGIN_SHADER_FILL:
 					var c = data.readBeginShaderFill();
-					var shaderBuffer = c.shaderBuffer;
+					shaderBuffer = c.shaderBuffer;
 
 					bitmap = null;
 
@@ -135,10 +136,7 @@ class Context3DGraphics
 						}
 
 						var vertexOffset, alpha = 1.0, tileData, id;
-						var bitmapWidth,
-							bitmapHeight,
-							tileWidth:Float,
-							tileHeight:Float;
+						var bitmapWidth, bitmapHeight, tileWidth:Float, tileHeight:Float;
 						var uvX, uvY, uvWidth, uvHeight;
 						var x, y, x2, y2, x3, y3, x4, y4;
 						var ri, ti;
@@ -260,42 +258,79 @@ class Context3DGraphics
 					var vertexOffset = hasUVTData ? vertexBufferPositionUVT : vertexBufferPosition;
 
 					// TODO: Use index buffer for indexed render
+					var useDrawElements = shaderBuffer != null && shaderBuffer.shader.__useDrawElements;
+					if (useDrawElements)
+					{
+						resizeIndexBuffer(graphics, false, triangleIndexBufferPosition + length);
+						resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (numVertices * dataPerVertex));
+					}
+					else
+						resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (length * dataPerVertex));
 
-					// if (hasIndices) resizeIndexBuffer (graphics, false, triangleIndexBufferPosition + length);
-					resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (length * dataPerVertex));
-
-					// var indexBufferData = graphics.__triangleIndexBufferData;
 					var vertexBufferData = hasUVTData ? graphics.__vertexBufferDataUVT : graphics.__vertexBufferData;
 					var offset, vertOffset, uvOffset, t;
 
-					for (i in 0...length)
+					if (useDrawElements)
 					{
-						offset = vertexOffset + (i * dataPerVertex);
-						vertOffset = hasIndices ? indices[i] * 2 : i * 2;
-						uvOffset = hasIndices ? indices[i] * uvStride : i * uvStride;
-
-						// if (hasIndices) indexBufferData[triangleIndexBufferPosition + i] = indices[i];
-
-						if (hasUVTData)
+						var indexBufferData = graphics.__triangleIndexBufferData;
+						for (i in 0...length)
 						{
-							t = uvtData[uvOffset + 2];
-
-							vertexBufferData[offset + 0] = vertices[vertOffset] / t;
-							vertexBufferData[offset + 1] = vertices[vertOffset + 1] / t;
-							vertexBufferData[offset + 2] = 0;
-							vertexBufferData[offset + 3] = 1 / t;
+							indexBufferData[triangleIndexBufferPosition + i] = indices[i];
 						}
-						else
+						for (i in 0...numVertices)
 						{
-							vertexBufferData[offset + 0] = vertices[vertOffset];
-							vertexBufferData[offset + 1] = vertices[vertOffset + 1];
-						}
+							offset = vertexOffset + (i * dataPerVertex);
+							vertOffset = i * 2;
+							uvOffset = i * uvStride;
 
-						vertexBufferData[offset + vertLength] = hasUVData ? uvtData[uvOffset] : 0;
-						vertexBufferData[offset + vertLength + 1] = hasUVData ? uvtData[uvOffset + 1] : 0;
+							if (hasUVTData)
+							{
+								t = uvtData[uvOffset + 2];
+
+								vertexBufferData[offset + 0] = vertices[vertOffset] / t;
+								vertexBufferData[offset + 1] = vertices[vertOffset + 1] / t;
+								vertexBufferData[offset + 2] = 0;
+								vertexBufferData[offset + 3] = 1 / t;
+							}
+							else
+							{
+								vertexBufferData[offset + 0] = vertices[vertOffset];
+								vertexBufferData[offset + 1] = vertices[vertOffset + 1];
+							}
+
+							vertexBufferData[offset + vertLength] = hasUVData ? uvtData[uvOffset] : 0;
+							vertexBufferData[offset + vertLength + 1] = hasUVData ? uvtData[uvOffset + 1] : 0;
+						}
+					}
+					else
+					{
+						for (i in 0...length)
+						{
+							offset = vertexOffset + (i * dataPerVertex);
+							vertOffset = hasIndices ? indices[i] * 2 : i * 2;
+							uvOffset = hasIndices ? indices[i] * uvStride : i * uvStride;
+
+							if (hasUVTData)
+							{
+								t = uvtData[uvOffset + 2];
+
+								vertexBufferData[offset + 0] = vertices[vertOffset] / t;
+								vertexBufferData[offset + 1] = vertices[vertOffset + 1] / t;
+								vertexBufferData[offset + 2] = 0;
+								vertexBufferData[offset + 3] = 1 / t;
+							}
+							else
+							{
+								vertexBufferData[offset + 0] = vertices[vertOffset];
+								vertexBufferData[offset + 1] = vertices[vertOffset + 1];
+							}
+
+							vertexBufferData[offset + vertLength] = hasUVData ? uvtData[uvOffset] : 0;
+							vertexBufferData[offset + vertLength + 1] = hasUVData ? uvtData[uvOffset + 1] : 0;
+						}
 					}
 
-					// if (hasIndices) triangleIndexBufferPosition += length;
+					if (useDrawElements) triangleIndexBufferPosition += length;
 					if (hasUVTData)
 					{
 						vertexBufferPositionUVT += length * dataPerVertex;
@@ -714,6 +749,7 @@ class Context3DGraphics
 							var culling = c.culling;
 
 							var hasIndices = (indices != null);
+							var useDrawElements = shaderBuffer != null && shaderBuffer.shader.__useDrawElements;
 							var numVertices = Math.floor(vertices.length / 2);
 							var length = hasIndices ? indices.length : numVertices;
 
@@ -770,16 +806,15 @@ class Context3DGraphics
 								default:
 							}
 
-							// if (hasIndices) {
-
-							// 	context.drawTriangles (graphics.__triangleIndexBuffer, triangleIndexBufferPosition, Math.floor (length / 3));
-							// 	triangleIndexBufferPosition += length;
-
-							// } else {
-
-							context.__drawTriangles(0, length);
-
-							// }
+							if (useDrawElements)
+							{
+								context.drawTriangles(graphics.__triangleIndexBuffer, triangleIndexBufferPosition, Math.floor(length / 3));
+								triangleIndexBufferPosition += length;
+							}
+							else
+							{
+								context.__drawTriangles(0, length);
+							}
 
 							shaderBufferOffset += length;
 							if (hasUVTData)
