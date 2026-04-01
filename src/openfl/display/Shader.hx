@@ -961,6 +961,13 @@ class Shader
 
 		return __glVertexSource = value;
 	}
+
+	@:noCompletion private var __useDrawElements:Bool = false;
+
+	public function useDrawElements(value:Bool = true):Void
+	{
+		__useDrawElements = value;
+	}
 }
 #else
 typedef Shader = flash.display.Shader;
