@@ -59,6 +59,7 @@ class Context3DGraphics
 
 		var bitmap:BitmapData = null;
 		var bitmapMatrix:Matrix = null;
+		var shaderBuffer:ShaderBuffer = null;
 
 		var scale9Grid:Rectangle = graphics.__owner.__scale9Grid;
 		var hasScale9Grid = scale9Grid != null && !graphics.__owner.__isMask && graphics.__worldTransform.b == 0 && graphics.__worldTransform.c == 0;
@@ -189,7 +190,7 @@ class Context3DGraphics
 
 				case BEGIN_SHADER_FILL:
 					var c = data.readBeginShaderFill();
-					var shaderBuffer = c.shaderBuffer;
+					shaderBuffer = c.shaderBuffer;
 
 					bitmap = null;
 					bitmapMatrix = null;
