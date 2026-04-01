@@ -52,6 +52,7 @@ class Context3DGraphics
 		var tileTransform = Matrix.__pool.get();
 
 		var bitmap = null;
+		var shaderBuffer = null;
 
 		for (type in graphics.__commands.types)
 		{
@@ -67,7 +68,7 @@ class Context3DGraphics
 
 				case BEGIN_SHADER_FILL:
 					var c = data.readBeginShaderFill();
-					var shaderBuffer = c.shaderBuffer;
+					shaderBuffer = c.shaderBuffer;
 
 					bitmap = null;
 
@@ -135,10 +136,7 @@ class Context3DGraphics
 						}
 
 						var vertexOffset, alpha = 1.0, tileData, id;
-						var bitmapWidth,
-							bitmapHeight,
-							tileWidth:Float,
-							tileHeight:Float;
+						var bitmapWidth, bitmapHeight, tileWidth:Float, tileHeight:Float;
 						var uvX, uvY, uvWidth, uvHeight;
 						var x, y, x2, y2, x3, y3, x4, y4;
 						var ri, ti;
@@ -260,9 +258,14 @@ class Context3DGraphics
 					var vertexOffset = hasUVTData ? vertexBufferPositionUVT : vertexBufferPosition;
 
 					// TODO: Use index buffer for indexed render
-
-					// if (hasIndices) resizeIndexBuffer (graphics, false, triangleIndexBufferPosition + length);
-					resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (length * dataPerVertex));
+					var useDrawElements = shaderBuffer != null && shaderBuffer.shader.__useDrawElements;
+					if (useDrawElements)
+					{
+						resizeIndexBuffer(graphics, false, triangleIndexBufferPosition + length);
+						resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (numVertices * dataPerVertex));
+					}
+					else
+						resizeVertexBuffer(graphics, hasUVTData, vertexOffset + (length * dataPerVertex));
 
 					// var indexBufferData = graphics.__triangleIndexBufferData;
 					var vertexBufferData = hasUVTData ? graphics.__vertexBufferDataUVT : graphics.__vertexBufferData;
