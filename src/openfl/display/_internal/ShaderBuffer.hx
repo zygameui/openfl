@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+#if !flash
 import openfl.display3D._internal.GLBuffer;
 import openfl.utils._internal.Float32Array;
 import openfl.display3D.Context3DMipFilter;
@@ -15,6 +16,7 @@ import openfl.display.ShaderParameter;
 @:noDebug
 #end
 @:access(openfl.display.Shader)
+@:access(openfl.display.ShaderParameter)
 @SuppressWarnings("checkstyle:FieldDocComment")
 class ShaderBuffer
 {
@@ -49,6 +51,7 @@ class ShaderBuffer
 	public var paramRefs_Float:Array<ShaderParameter<Float>>;
 	public var paramRefs_Int:Array<ShaderParameter<Int>>;
 	public var paramTypes:Array<Int>;
+	public var paramIndicesDataLength:Int;
 	public var shader:GraphicsShader;
 
 	public function new()
@@ -116,6 +119,7 @@ class ShaderBuffer
 		paramDataLength = 0;
 		paramFloatCount = 0;
 		paramIntCount = 0;
+		paramIndicesDataLength = 0;
 		this.shader = null;
 
 		if (shader == null) return;
@@ -123,7 +127,7 @@ class ShaderBuffer
 		shader.__init();
 
 		inputCount = shader.__inputBitmapData.length;
-		var input;
+		var input:ShaderInput<BitmapData>;
 
 		for (i in 0...inputCount)
 		{
@@ -144,7 +148,7 @@ class ShaderBuffer
 		paramIntCount = intCount;
 
 		var length = 0, p = 0;
-		var param;
+		var param:ShaderParameter<Bool>;
 
 		for (i in 0...boolCount)
 		{
@@ -155,12 +159,13 @@ class ShaderBuffer
 			paramLengths[p] = length;
 			paramDataLength += length;
 			paramTypes[p] = 0;
+			if (param.value != null && !param.__isUniform) paramIndicesDataLength += param.__length;
 
 			paramRefs_Bool[i] = param;
 			p++;
 		}
 
-		var param;
+		var param:ShaderParameter<Float>;
 
 		for (i in 0...floatCount)
 		{
@@ -171,12 +176,13 @@ class ShaderBuffer
 			paramLengths[p] = length;
 			paramDataLength += length;
 			paramTypes[p] = 1;
+			if (param.value != null && !param.__isUniform) paramIndicesDataLength += param.__length;
 
 			paramRefs_Float[i] = param;
 			p++;
 		}
 
-		var param;
+		var param:ShaderParameter<Int>;
 
 		for (i in 0...intCount)
 		{
@@ -187,6 +193,7 @@ class ShaderBuffer
 			paramLengths[p] = length;
 			paramDataLength += length;
 			paramTypes[p] = 2;
+			if (param.value != null && !param.__isUniform) paramIndicesDataLength += param.__length;
 
 			paramRefs_Int[i] = param;
 			p++;
@@ -211,7 +218,10 @@ class ShaderBuffer
 		var intIndex = 0;
 
 		var paramPosition:Int = 0;
-		var boolParam, floatParam, intParam, length;
+		var boolParam:ShaderParameter<Bool>;
+		var floatParam:ShaderParameter<Float>;
+		var intParam:ShaderParameter<Int>;
+		var length:Int;
 
 		for (i in 0...paramCount)
 		{
@@ -256,3 +266,4 @@ class ShaderBuffer
 		#end
 	}
 }
+#end
