@@ -258,8 +258,11 @@ class Context3DGraphics
 					var vertexOffset = hasUVTData ? vertexBufferPositionUVT : vertexBufferPosition;
 
 					// Use index buffer for indexed render
-					var useDrawElements = shaderBuffer != null
-						&& shaderBuffer.paramDataLength < length * shaderBuffer.paramIndicesDataLength;
+					// TODO: Implement drawElements optimization when uvtData.length == 3 (x, y, t) if the t component is identical for each shared index.
+					// TODO: Support drawElements by moving the t division logic from the CPU buffer to the shader when uvtData.length == 3 (x, y, t).
+					var useDrawElements = !hasUVTData
+						&& (shaderBuffer == null
+							|| (shaderBuffer != null && shaderBuffer.paramDataLength < length * shaderBuffer.paramIndicesDataLength));
 					if (useDrawElements)
 					{
 						resizeIndexBuffer(graphics, false, triangleIndexBufferPosition + length);
@@ -752,13 +755,17 @@ class Context3DGraphics
 							var hasIndices = (indices != null);
 							var numVertices = Math.floor(vertices.length / 2);
 							var length = hasIndices ? indices.length : numVertices;
-							var useDrawElements = shaderBuffer != null
-								&& shaderBuffer.paramDataLength < length * shaderBuffer.paramIndicesDataLength;
 
 							var hasUVData = (uvtData != null);
 							var hasUVTData = (hasUVData && uvtData.length >= (numVertices * 3));
 							var vertLength = hasUVTData ? 4 : 2;
-							var uvStride = hasUVTData ? 3 : 2;
+
+							// TODO: Implement drawElements optimization when uvtData.length == 3 (x, y, t) if the t component is identical for each shared index.
+							// TODO: Support drawElements by moving the t division logic from the CPU buffer to the shader when uvtData.length == 3 (x, y, t).
+							var useDrawElements = !hasUVTData
+								&& (shaderBuffer == null
+									|| (shaderBuffer != null
+										&& shaderBuffer.paramDataLength < length * shaderBuffer.paramIndicesDataLength));
 
 							var dataPerVertex = vertLength + 2;
 							var vertexBuffer = hasUVTData ? graphics.__vertexBufferUVT : graphics.__vertexBuffer;
