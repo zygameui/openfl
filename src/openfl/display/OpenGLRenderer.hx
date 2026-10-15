@@ -358,7 +358,14 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		__currentShaderBuffer = null;
 
-		if (__currentShader == shader) return;
+		// 离屏绘制与舞台渲染共用上下文，其他渲染器可能已经切换了程序。
+		// 只有本地缓存、待提交状态和已绑定状态都一致时，才能跳过重新绑定。
+		if (__currentShader == shader
+			&& __context3D.__state.program == (shader != null ? shader.program : null)
+			&& __context3D.__contextState.program == (shader != null ? shader.program : null))
+		{
+			return;
+		}
 
 		if (__currentShader != null)
 		{
