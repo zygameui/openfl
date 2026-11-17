@@ -202,6 +202,72 @@ class BitmapData implements IBitmapDrawable
 	@:noCompletion private var __scrollRect:Rectangle;
 	@:noCompletion private var __stencilBuffer:GLRenderbuffer;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __surface:#if lime CairoSurface #else Dynamic #end;
+	// 孤儿纹理回收：位图对象已经被 JS 回收、但 GL 纹理还留在显存里。
+	// 引擎里很多地方是直接丢引用而不是调用 dispose，纹理就永远泄漏；
+	// 这里用 WeakRef 判断位图对象是否还活着，死了就把对应纹理删掉。
+	@:noCompletion private static var __texRefs:Array<Dynamic> = [];
+	@:noCompletion private var __texRefEntry:Dynamic = null;
+	@:noCompletion private static var __weakRefOK:Null<Bool> = null;
+
+	/**
+	 * 给已经持有纹理的位图补登记弱引用（例如 ASTC 位图，纹理由外部创建后直接塞进来）
+	 */
+	@:noCompletion public function registerOwnTexture():Void {
+		if (__texture != null)
+			registerTexture(this, __texture);
+	}
+
+	@:noCompletion public static function registerTexture(bmd:BitmapData, tex:TextureBase):Void {
+		#if js
+		if (__weakRefOK == false || bmd.__texRefEntry != null)
+			return;
+		try {
+			var entry = {ref: js.Syntax.code("new WeakRef({0})", bmd), tex: tex};
+			bmd.__texRefEntry = entry;
+			__texRefs.push(entry);
+			__weakRefOK = true;
+		} catch (e:Dynamic) {
+			__weakRefOK = false;
+		}
+		#end
+	}
+
+	/**
+	 * 回收"位图对象已被垃圾回收、但 GL 纹理还在显存"的孤儿纹理。
+	 * @return 本次回收的纹理数量
+	 */
+	@:noCompletion public static function sweepOrphanTextures():Int {
+		#if js
+		if (__weakRefOK != true)
+			return 0;
+		var count = 0;
+		var keep:Array<Dynamic> = [];
+		for (entry in __texRefs) {
+			if (entry.tex == null)
+				continue;
+			var alive:Dynamic = null;
+			try {
+				alive = js.Syntax.code("{0}.deref()", entry.ref);
+			} catch (e:Dynamic) {
+				keep.push(entry);
+				continue;
+			}
+			if (alive == null) {
+				try {
+					entry.tex.dispose();
+				} catch (e:Dynamic) {}
+				count++;
+			} else {
+				keep.push(entry);
+			}
+		}
+		__texRefs = keep;
+		return count;
+		#else
+		return 0;
+		#end
+	}
+
 	@:noCompletion private var __texture:TextureBase;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __textureContext:#if lime RenderContext #else Dynamic #end;
 	@:noCompletion private var __textureHeight:Int;
@@ -777,7 +843,20 @@ class BitmapData implements IBitmapDrawable
 		__vertexBuffer = null;
 		__framebuffer = null;
 		__framebufferContext = null;
-		__texture = null;
+
+		// [内存修复] 真正释放 GPU 纹理。
+		// 原代码直接写 __texture = null，下面注释掉的 gl.deleteTexture 又在这个赋值之后判断，
+		// 所以纹理显存永远不会回收：微信小游戏里表现为 physFootprint 每进一个房间涨一截，
+		// 只有关掉小游戏销毁 WebGL 上下文才释放。
+		// 注意：必须先 dispose 再置空，顺序不能调换。
+		if (__texture != null) {
+			__texture.dispose();
+			__texture = null;
+		}
+		if (__texRefEntry != null) {
+			__texRefEntry.tex = null;
+			__texRefEntry = null;
+		}
 		__textureContext = null;
 
 		// if (__texture != null) {
@@ -1379,6 +1458,7 @@ class BitmapData implements IBitmapDrawable
 		bitmapData.__texture = texture;
 		bitmapData.__textureContext = texture.__textureContext;
 		bitmapData.image = null;
+		registerTexture(bitmapData, texture);
 		return bitmapData;
 	}
 
@@ -2235,6 +2315,8 @@ class BitmapData implements IBitmapDrawable
 		{
 			__textureContext = context.__context;
 			__texture = context.createRectangleTexture(width, height, BGRA, false);
+			// 登记弱引用，位图对象被回收后由 sweepOrphanTextures 回收纹理
+			registerTexture(this, __texture);
 
 			// context.__bindGLTexture2D (__texture);
 			// gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -2242,6 +2324,12 @@ class BitmapData implements IBitmapDrawable
 			// gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 			// gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 			__textureVersion = -1;
+		}
+		else if (__texRefEntry == null)
+		{
+			// 纹理不是在这里创建的（例如 ASTC 位图由 fromTexture 直接塞进来），
+			// 第一次渲染时补登记，保证它们也会被 sweepOrphanTextures 回收
+			registerTexture(this, __texture);
 		}
 
 		#if lime

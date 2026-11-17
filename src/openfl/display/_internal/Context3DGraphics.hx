@@ -365,6 +365,8 @@ class Context3DGraphics
 
 			if (buffer == null || triangleIndexBufferPosition > graphics.__triangleIndexBufferCount)
 			{
+				// 扩容时旧缓冲直接被覆盖，原代码不删除，GL 缓冲会随画面复杂度创新高一路累积
+				if (buffer != null) buffer.dispose();
 				buffer = context.createIndexBuffer(triangleIndexBufferPosition, DYNAMIC_DRAW);
 				graphics.__triangleIndexBuffer = buffer;
 				graphics.__triangleIndexBufferCount = triangleIndexBufferPosition;
@@ -379,6 +381,7 @@ class Context3DGraphics
 
 			if (buffer == null || vertexBufferPosition > graphics.__vertexBufferCount)
 			{
+				if (buffer != null) buffer.dispose();
 				buffer = context.createVertexBuffer(vertexBufferPosition, 4, DYNAMIC_DRAW);
 				graphics.__vertexBuffer = buffer;
 				graphics.__vertexBufferCount = vertexBufferPosition;
@@ -393,6 +396,7 @@ class Context3DGraphics
 
 			if (buffer == null || vertexBufferPositionUVT > graphics.__vertexBufferCountUVT)
 			{
+				if (buffer != null) buffer.dispose();
 				buffer = context.createVertexBuffer(vertexBufferPositionUVT, 6, DYNAMIC_DRAW);
 				graphics.__vertexBufferUVT = buffer;
 				graphics.__vertexBufferCountUVT = vertexBufferPositionUVT;
